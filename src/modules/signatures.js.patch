@@ -1,0 +1,137 @@
+@@ -46,31 +46,47 @@
+ export function initSignatures(containerId) {
+     pdfContainer = document.getElementById(containerId);
+     
+-    const btnSign = document.getElementById('btn-sign');
+-    const vault = document.getElementById('signature-vault');
+-    const btnNewSig = document.getElementById('btn-new-signature');
+-    const btnNewStamp = document.getElementById('btn-new-stamp');
++    const btnStamp = document.getElementById('btn-stamp');
++    const btnEsign = document.getElementById('btn-esign');
++    const stampVault = document.getElementById('stamp-vault');
++    const esignVault = document.getElementById('esign-vault');
++    const btnNewSig = document.getElementById('btn-new-signature'); // En Stamp Vault
++    const btnNewIdentity = document.getElementById('btn-new-identity'); // En eSign Vault
+ 
+-    // Toggle Bóveda
+-    btnSign.addEventListener('click', () => {
+-        const isVisible = vault.style.display === 'flex';
+-        vault.style.display = isVisible ? 'none' : 'flex';
+-        if (!isVisible) {
+-            renderVault();
++    // Migrar datos antiguos a nueva estructura si existen
++    const oldSigs = localStorage.getItem('inkit_signatures');
++    if (oldSigs) {
++        localStorage.setItem('inkit_stamps', oldSigs); // Todo lo viejo va a stamps (mayormente dibujos/imágenes)
++        localStorage.removeItem('inkit_signatures');
++    }
++
++    btnStamp.addEventListener('click', () => {
++        esignVault.style.display = 'none';
++        const isVisible = stampVault.style.display === 'flex';
++        stampVault.style.display = isVisible ? 'none' : 'flex';
++        if (!isVisible) renderVaults();
++        else window.disableSignatures();
++    });
++
++    btnEsign.addEventListener('click', () => {
++        stampVault.style.display = 'none';
++        const isVisible = esignVault.style.display === 'flex';
++        esignVault.style.display = isVisible ? 'none' : 'flex';
++        if (!isVisible) renderVaults();
+-        } else {
+-            window.disableSignatures();
+-        }
++        else window.disableSignatures();
+     });
+ 
+     window.disableSignatures = () => {
+         isStampingMode = false;
+-        vault.style.display = 'none';
++        stampVault.style.display = 'none';
++        esignVault.style.display = 'none';
+         pdfContainer.style.cursor = 'default';
+         selectedSignatureBase64 = null;
+     };
+ 
+     // Sello Formal (Digital Visual Stamp -> Identity)
+-    const stampModal = document.getElementById('stamp-modal');
++    const stampModal = document.getElementById('stamp-modal'); // Identity modal
+     const inputName = document.getElementById('stamp-input-name');
+     const inputDetail = document.getElementById('stamp-input-detail');
+     const btnCancelStamp = document.getElementById('btn-cancel-stamp');
+     const btnGenerateStamp = document.getElementById('btn-generate-stamp');
+ 
+-    btnNewStamp.addEventListener('click', () => {
++    btnNewIdentity.addEventListener('click', () => {
+         stampModal.style.display = 'flex';
+         inputName.value = '';
+@@ -151,11 +167,11 @@
+             // Recortar
+             const croppedDataUrl = trimCanvas(stampCanvas);
+             
+-            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
++            let saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
+             saved.push(croppedDataUrl);
+-            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
++            localStorage.setItem('inkit_esigns', JSON.stringify(saved));
+             
+-            renderVault();
++            renderVaults();
+         };
+         
+         // Fallback por si la imagen falla en cargar
+@@ -187,11 +203,11 @@
+             
+             const croppedDataUrl = trimCanvas(stampCanvas);
+             
+-            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
++            let saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
+             saved.push(croppedDataUrl);
+-            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
++            localStorage.setItem('inkit_esigns', JSON.stringify(saved));
+             
+-            renderVault();
++            renderVaults();
+         };
+     });
+ 
+@@ -199,7 +215,7 @@
+     btnNewSig.addEventListener('click', () => {
+         clearCanvas();
+         modal.style.display = 'flex';
+-        vault.style.display = 'none';
++        stampVault.style.display = 'none';
+         btnSigSave.disabled = true;
+     });
+ 
+@@ -216,11 +232,11 @@
+     btnSigSave.addEventListener('click', () => {
+         if (!isCanvasEmpty()) {
+             const dataUrl = trimCanvas(canvas);
+-            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
++            let saved = JSON.parse(localStorage.getItem('inkit_stamps') || '[]');
+             saved.push(dataUrl);
+-            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
++            localStorage.setItem('inkit_stamps', JSON.stringify(saved));
+             
+-            renderVault();
++            renderVaults();
+         }
+         modal.style.display = 'none';
+     });
+@@ -434,13 +450,13 @@
+     img.onload = () => {
+         const dataUrl = trimCanvas(tempCanvas);
+         
+-        let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
++        let saved = JSON.parse(localStorage.getItem('inkit_stamps') || '[]');
+         saved.push(dataUrl);
+-        localStorage.setItem('inkit_signatures', JSON.stringify(saved));
++        localStorage.setItem('inkit_stamps', JSON.stringify(saved));
+         
+-        renderVault();
++        renderVaults();
+     };
+     img.src = e.target.result;
+ };
