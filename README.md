@@ -64,7 +64,7 @@ npm run tauri dev
 
 ## 📦 Building for Production
 
-To build a standalone Windows executable (`.exe` o `.msix`):
+To build a standalone Windows executable (`.exe` or `.msix`):
 
 ```bash
 npm run tauri build
@@ -86,5 +86,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 <div align="center">
-  <i>Part of the <b>Yeib Ecosystem</b> — High-Performance Native Windows Apps.</i>
+  <i>Part of the <b>Yeib Ecosystem</b> — Fast, Lightweight Native Windows Apps.</i>
 </div>
