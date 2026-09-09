@@ -327,8 +327,13 @@ export function initSignatures(containerId) {
                 newW = baseW;
                 newH = baseH;
             } else if (sizeType === 'L') {
-                newW = baseW * 1.6; // Ajustado para que quepa en un A4 sin verse tan deforme
-                newH = baseH; // Altura normal de M (se deforma intencionalmente)
+                if (isStamp) {
+                    newW = baseW * 1.6; 
+                    newH = baseH; // Se deforma intencionalmente SOLO para identidades alargadas
+                } else {
+                    newW = baseW * 1.6;
+                    newH = baseH * 1.6; // Mantiene proporción normal
+                }
             }
             
             ctxMenuActiveAnno.width = newW;
