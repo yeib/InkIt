@@ -52,6 +52,7 @@
   height: 60px;
   object-fit: contain;
   pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 /* Modal */
@@ -97,6 +98,8 @@
   cursor: move;
   transform-origin: top left;
   border: 1px dashed transparent;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .img-annotation:hover, .img-annotation.selected {

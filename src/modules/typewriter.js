@@ -4,6 +4,7 @@ let isTypewriterMode = false;
 let currentFontSize = 16;
 let currentColor = '#000000';
 let currentStamp = null;
+let activeAnnotation = null;
 
 let pdfContainer = null;
 
@@ -19,23 +20,35 @@ export function initTypewriter(containerId) {
     
     // Toggle Typewriter Mode
     btnTypewriter.addEventListener('click', () => {
-        isTypewriterMode = !isTypewriterMode;
-        currentStamp = null; // Limpiar modo sello
-        
-        if (isTypewriterMode) {
-            btnTypewriter.classList.add('primary');
+        if (!isTypewriterMode) {
+            isTypewriterMode = true;
+            currentStamp = null; // Limpiar modo sello
             toolbar.style.display = 'flex';
             pdfContainer.style.cursor = 'text';
         } else {
-            btnTypewriter.classList.remove('primary');
-            toolbar.style.display = 'none';
-            pdfContainer.style.cursor = 'default';
+            window.disableTypewriter();
         }
     });
+
+    window.disableTypewriter = () => {
+        isTypewriterMode = false;
+        toolbar.style.display = 'none';
+        pdfContainer.style.cursor = 'default';
+        currentStamp = null;
+    };
 
     // Control de tamaño
     sizeInput.addEventListener('change', (e) => {
         currentFontSize = parseInt(e.target.value) || 16;
+        if (activeAnnotation) {
+            const anno = annotations.find(a => a.id === activeAnnotation.dataset.id);
+            if (anno) {
+                anno.fontSize = currentFontSize;
+                const wrapper = activeAnnotation.closest('.pdf-page-wrapper');
+                const scale = wrapper ? parseFloat(wrapper.dataset.scale || 1.0) : 1.0;
+                activeAnnotation.style.fontSize = (currentFontSize * scale) + 'px';
+            }
+        }
     });
 
     // Control de color
@@ -44,6 +57,14 @@ export function initTypewriter(containerId) {
             colorBtns.forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             currentColor = e.target.dataset.color;
+            
+            if (activeAnnotation) {
+                const anno = annotations.find(a => a.id === activeAnnotation.dataset.id);
+                if (anno) {
+                    anno.color = currentColor;
+                    activeAnnotation.style.color = currentColor;
+                }
+            }
         });
     });
 
@@ -170,7 +191,10 @@ export function renderAnnotation(anno, wrapper, scale) {
 }
 
 function setupExistingAnnotation(div, anno, scale) {
-    div.addEventListener('focus', () => div.classList.add('editing'));
+    div.addEventListener('focus', () => {
+        div.classList.add('editing');
+        activeAnnotation = div;
+    });
     div.addEventListener('blur', () => {
         div.classList.remove('editing');
         const text = div.innerText.trim();

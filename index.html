@@ -34,8 +34,10 @@
         </div>
         <div class="toolbar-center">
           <button class="btn-glass" id="btn-open-pdf">Abrir PDF</button>
-          <button class="btn-glass" id="btn-typewriter">Texto</button>
-          <button class="btn-glass primary" id="btn-sign">Firmar</button>
+          <div class="divider" style="margin: 0 8px;"></div>
+          <button class="btn-glass primary" id="btn-pointer">🖱️ Seleccionar</button>
+          <button class="btn-glass" id="btn-typewriter">🔤 Texto</button>
+          <button class="btn-glass" id="btn-sign">🖋️ Firmar</button>
         </div>
         <div class="toolbar-right window-controls">
           <div class="window-btn" id="titlebar-minimize">
@@ -60,6 +62,8 @@
           <label>Color:</label>
           <button class="color-btn active" data-color="#000000" style="background: #000000;"></button>
           <button class="color-btn" data-color="#003399" style="background: #003399;"></button>
+          <button class="color-btn" data-color="#cc0000" style="background: #cc0000;"></button>
+          <button class="color-btn" data-color="#008000" style="background: #008000;"></button>
         </div>
         <div class="divider"></div>
         <div class="tool-group">
@@ -77,7 +81,10 @@
         <div class="signature-vault glass-panel" id="signature-vault" style="display: none;">
           <div class="vault-header">
             <span>Mis Firmas</span>
-            <button class="btn-glass" id="btn-new-signature">+ Nueva</button>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn-glass" id="btn-new-stamp">+ Sello</button>
+              <button class="btn-glass" id="btn-new-signature">+ Dibujar</button>
+            </div>
           </div>
           <div class="vault-list" id="vault-list">
             <!-- Las firmas guardadas aparecerán aquí -->

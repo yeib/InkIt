@@ -2,7 +2,7 @@
 console.log("InkIt Inicializado: Yeib Ecosystem");
 
 import { invoke } from '@tauri-apps/api/core';
-import { open, save } from '@tauri-apps/plugin-dialog';
+import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { initPdfViewer, loadDocument } from './core/pdfViewer.js';
 import { initTypewriter } from './modules/typewriter.js';
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('menu-save-as')?.addEventListener('click', async () => {
             mainMenuDropdown.style.display = 'none';
             if (!currentPdfPath) {
-                alert('Abre un PDF primero antes de guardar.');
+                await message('Abre un PDF primero antes de guardar.', { title: 'InkIt', kind: 'warning' });
                 return;
             }
 
@@ -111,11 +111,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Usamos Rust para guardar y evitar problemas de permisos de fs en frontend
                     await invoke('save_file', { path: targetPath, contents: Array.from(pdfBytesFinal) });
                     
-                    alert('PDF Aplanado guardado exitosamente!');
+                    await message('PDF Aplanado guardado exitosamente!', { title: 'InkIt', kind: 'info' });
                 }
             } catch (error) {
                 console.error('Error guardando PDF:', error);
-                alert('Error al guardar: ' + error);
+                await message('Error al guardar: ' + error, { title: 'Error', kind: 'error' });
             }
         });
 
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('menu-export-png')?.addEventListener('click', async () => {
             mainMenuDropdown.style.display = 'none';
             if (!currentPdfPath) {
-                alert('Abre un PDF primero para poder exportar.');
+                await message('Abre un PDF primero para poder exportar.', { title: 'Atención', kind: 'warning' });
                 return;
             }
 
@@ -152,11 +152,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Usamos Rust para guardar y evitar permisos
                     await invoke('save_file', { path: targetPath, contents: Array.from(bytes) });
                     
-                    alert('Página exportada con éxito como PNG.');
+                    await message('Página exportada con éxito como PNG.', { title: 'InkIt', kind: 'info' });
                 }
             } catch (error) {
                 console.error('Error exportando PNG:', error);
-                alert('Error al exportar: ' + error.message);
+                await message('Error al exportar: ' + error.message, { title: 'Error', kind: 'error' });
             }
         });
 
@@ -188,6 +188,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             autoFlatten: document.getElementById('setting-auto-flatten').checked
         }));
 
+
+
         // Aplicar Modo Oscuro a los canvas de PDF
         const viewer = document.getElementById('pdf-viewer');
         if (settingDarkMode.checked) {
@@ -202,6 +204,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.glass-checkbox').forEach(cb => {
         cb.addEventListener('change', applySettings);
     });
+
+    // Manejo unificado de Herramientas (Radio Buttons)
+    const btnPointer = document.getElementById('btn-pointer');
+    const btnTypewriter = document.getElementById('btn-typewriter');
+    const btnSign = document.getElementById('btn-sign');
+
+    const updateToolButtons = (activeBtnId) => {
+        [btnPointer, btnTypewriter, btnSign].forEach(btn => {
+            if (btn && btn.id === activeBtnId) {
+                btn.classList.add('primary');
+            } else if (btn) {
+                btn.classList.remove('primary');
+            }
+        });
+    };
+
+    if (btnPointer) {
+        btnPointer.addEventListener('click', () => {
+            updateToolButtons('btn-pointer');
+            if (window.disableTypewriter) window.disableTypewriter();
+            if (window.disableSignatures) window.disableSignatures();
+        });
+    }
+
+    if (btnTypewriter) {
+        btnTypewriter.addEventListener('click', () => {
+            updateToolButtons('btn-typewriter');
+            if (window.disableSignatures) window.disableSignatures();
+        });
+    }
+
+    if (btnSign) {
+        btnSign.addEventListener('click', () => {
+            updateToolButtons('btn-sign');
+            if (window.disableTypewriter) window.disableTypewriter();
+        });
+    }
 
     // Inicializar el visor de PDF (HTML Canvas container)
     await initPdfViewer('pdf-viewer');
@@ -232,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error("Error en flujo de apertura:", error);
-            alert("Hubo un error al abrir el documento.");
+            await message('Hubo un error al abrir el documento.', { title: 'Error', kind: 'error' });
         }
     });
 });

@@ -20,6 +20,8 @@ export function initSignatures(containerId) {
     canvas = document.getElementById('signature-canvas');
     ctx = canvas.getContext('2d');
     
+    const btnNewStamp = document.getElementById('btn-new-stamp');
+
     // Toggle Bóveda
     btnSign.addEventListener('click', () => {
         const isVisible = vault.style.display === 'flex';
@@ -27,9 +29,70 @@ export function initSignatures(containerId) {
         if (!isVisible) {
             renderVault();
         } else {
-            isStampingMode = false;
-            pdfContainer.style.cursor = 'default';
+            window.disableSignatures();
         }
+    });
+
+    window.disableSignatures = () => {
+        isStampingMode = false;
+        vault.style.display = 'none';
+        pdfContainer.style.cursor = 'default';
+        selectedSignatureBase64 = null;
+    };
+
+    // Sello Formal (Digital Visual Stamp)
+    btnNewStamp.addEventListener('click', () => {
+        const name = prompt("Escribe tu Nombre para el Sello Digital:");
+        if (!name) return;
+        const detail = prompt("Escribe tu e-mail, cargo o ID (Opcional):") || "";
+        
+        // Crear un canvas temporal para dibujar el sello
+        const stampCanvas = document.createElement('canvas');
+        stampCanvas.width = 350;
+        stampCanvas.height = 100;
+        const sCtx = stampCanvas.getContext('2d');
+        
+        // Fondo y borde
+        sCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        sCtx.fillRect(0, 0, 350, 100);
+        sCtx.strokeStyle = '#003399';
+        sCtx.lineWidth = 2;
+        sCtx.strokeRect(1, 1, 348, 98);
+        
+        // Icono a la izquierda (Pluma o logo)
+        sCtx.fillStyle = '#003399';
+        sCtx.font = '36px Arial';
+        sCtx.fillText('🖋️', 15, 60);
+        
+        // Separador
+        sCtx.beginPath();
+        sCtx.moveTo(60, 10);
+        sCtx.lineTo(60, 90);
+        sCtx.stroke();
+        
+        // Textos
+        sCtx.fillStyle = '#000000';
+        sCtx.font = 'bold 16px Arial';
+        sCtx.fillText(`Firmado digitalmente por:`, 70, 25);
+        sCtx.font = 'bold 18px Arial';
+        sCtx.fillStyle = '#003399';
+        sCtx.fillText(name, 70, 50);
+        
+        sCtx.fillStyle = '#333333';
+        sCtx.font = '12px Arial';
+        const today = new Date();
+        const dateStr = today.toLocaleString();
+        sCtx.fillText(`Fecha: ${dateStr}`, 70, 70);
+        if (detail) {
+            sCtx.fillText(detail, 70, 88);
+        }
+        
+        const dataUrl = stampCanvas.toDataURL('image/png');
+        let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+        saved.push(dataUrl);
+        localStorage.setItem('inkit_signatures', JSON.stringify(saved));
+        
+        renderVault();
     });
 
     // Nueva Firma
@@ -154,7 +217,7 @@ function clearCanvas() {
 }
 
 async function importSignature() {
-    const { open } = await import('@tauri-apps/plugin-dialog');
+    const { open, message } = await import('@tauri-apps/plugin-dialog');
     const { invoke } = await import('@tauri-apps/api/core');
     
     try {
@@ -197,7 +260,7 @@ async function importSignature() {
         }
     } catch (e) {
         console.error('Error al importar firma:', e);
-        alert('Hubo un error importando la imagen.');
+        await message('Hubo un error importando la imagen.', { title: 'Error', kind: 'error' });
     }
 }
 
