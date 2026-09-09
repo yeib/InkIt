@@ -1,3 +1,6 @@
+pub mod pdf_engine;
+pub mod utils;
+
 #[tauri::command]
 fn read_pdf(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(path).map_err(|e| e.to_string())
