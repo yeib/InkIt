@@ -60,6 +60,14 @@ body {
 }
 
 @media print {
+  @page {
+    margin: 0;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    background-color: white !important;
+  }
   .toolbar, .typewriter-toolbar, .signature-vault {
     display: none !important;
   }
@@ -68,9 +76,16 @@ body {
     margin: 0 !important;
     page-break-after: always;
   }
-  .workspace {
+  .workspace, .document-container {
     overflow: visible !important;
     height: auto !important;
+    padding: 0 !important;
+  }
+  /* Ensure canvas prints (some browsers need this) */
+  canvas {
+    max-width: 100%;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 

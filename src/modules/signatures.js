@@ -1,3 +1,4 @@
+import { t } from "./translations.js";
 export let imageAnnotations = [];
 
 let isStampingMode = false;
@@ -9,6 +10,36 @@ let ctxMenuActiveScale = 1.0;
 // Funciones de Dibujo (Signature Pad)
 let isDrawing = false;
 let canvas, ctx;
+
+export function addImageAnnotationToPage(dataUrl, pageNum, x, y, customWidth = null) {
+    const pageWrapper = document.querySelector(`.pdf-page-wrapper[data-page-num="${pageNum}"]`);
+    const currentScale = pageWrapper ? parseFloat(pageWrapper.dataset.scale || 1.0) : 1.0;
+    
+    const img = new Image();
+    img.onload = () => {
+        const ratio = img.width / img.height;
+        const width = customWidth || (ratio > 3 ? 300 : 150);
+        const height = width / ratio;
+        
+        const newImgAnno = {
+            id: 'sig_' + Date.now(),
+            pageNum: pageNum,
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            initialWidth: width,
+            originalRatio: ratio,
+            dataUrl: dataUrl
+        };
+        
+        imageAnnotations.push(newImgAnno);
+        if (pageWrapper) {
+            renderImageAnnotation(newImgAnno, pageWrapper, currentScale);
+        }
+    };
+    img.src = dataUrl;
+}
 
 export function initSignatures(containerId) {
     pdfContainer = document.getElementById(containerId);
@@ -92,7 +123,7 @@ export function initSignatures(containerId) {
             sCtx.fillStyle = '#003399';
             sCtx.font = 'italic 12px "Segoe Script", cursive, Arial';
             sCtx.fillText('InkIt', 18, 75);
-            sCtx.fillText('Verified', 10, 88);
+            sCtx.fillText(t('stamp.verified'), 10, 88);
             
             // Separador
             sCtx.beginPath();
@@ -103,7 +134,7 @@ export function initSignatures(containerId) {
             // Textos
             sCtx.fillStyle = '#000000';
             sCtx.font = 'bold 16px Arial';
-            sCtx.fillText(`Firmado digitalmente por:`, 75, 25);
+            sCtx.fillText(t('stamp.signed_by'), 75, 25);
             sCtx.font = 'bold 18px Arial';
             sCtx.fillStyle = '#003399';
             sCtx.fillText(name, 75, 50);
@@ -112,7 +143,7 @@ export function initSignatures(containerId) {
             sCtx.font = '12px Arial';
             const today = new Date();
             const dateStr = today.toLocaleString();
-            sCtx.fillText(`Fecha: ${dateStr}`, 75, 70);
+            sCtx.fillText(`${t('stamp.date_label')} ${dateStr}`, 75, 70);
             if (detail) {
                 sCtx.fillText(detail, 75, 88);
             }
@@ -139,7 +170,7 @@ export function initSignatures(containerId) {
             // Textos
             sCtx.fillStyle = '#000000';
             sCtx.font = 'bold 16px Arial';
-            sCtx.fillText(`Firmado digitalmente por:`, 75, 25);
+            sCtx.fillText(t('stamp.signed_by'), 75, 25);
             sCtx.font = 'bold 18px Arial';
             sCtx.fillStyle = '#003399';
             sCtx.fillText(name, 75, 50);
@@ -148,7 +179,7 @@ export function initSignatures(containerId) {
             sCtx.font = '12px Arial';
             const today = new Date();
             const dateStr = today.toLocaleString();
-            sCtx.fillText(`Fecha: ${dateStr}`, 75, 70);
+            sCtx.fillText(`${t('stamp.date_label')} ${dateStr}`, 75, 70);
             if (detail) {
                 sCtx.fillText(detail, 75, 88);
             }
@@ -221,6 +252,7 @@ export function initSignatures(containerId) {
                 y: baseY,
                 width: baseWidth,
                 height: baseWidth / ratio,
+                initialWidth: baseWidth,
                 originalRatio: ratio,
                 dataUrl: currentSigBase64
             };
@@ -258,7 +290,7 @@ export function initSignatures(containerId) {
             // Usamos originalRatio para que no se deforme al pasar de L a M
             const ratio = ctxMenuActiveAnno.originalRatio || (ctxMenuActiveAnno.width / ctxMenuActiveAnno.height);
             const isStamp = ratio > 3; 
-            const baseW = isStamp ? 300 : 150;
+            const baseW = ctxMenuActiveAnno.initialWidth || (isStamp ? 300 : 150);
             const baseH = baseW / ratio;
             
             let newW, newH;
@@ -388,7 +420,7 @@ async function importSignature() {
         }
     } catch (e) {
         console.error('Error al importar firma:', e);
-        await message('Hubo un error importando la imagen.', { title: 'Error', kind: 'error' });
+        await message(t('alert.error_import'), { title: t('alert.title.error'), kind: 'error' });
     }
 }
 
@@ -410,7 +442,7 @@ function renderVault() {
     list.innerHTML = '';
     
     if (saved.length === 0) {
-        list.innerHTML = '<p class="empty-msg">No hay firmas guardadas.</p>';
+        list.innerHTML = `<p class="empty-msg">${t('vault.empty')}</p>`;
         return;
     }
     
@@ -424,7 +456,7 @@ function renderVault() {
         const delBtn = document.createElement('button');
         delBtn.innerHTML = '❌';
         delBtn.className = 'btn-delete-sig';
-        delBtn.title = 'Eliminar';
+        delBtn.title = t('vault.delete_title');
         
         delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -454,7 +486,7 @@ export function renderImageAnnotation(anno, wrapper, scale) {
     img.src = anno.dataUrl;
     img.className = 'img-annotation';
     img.dataset.id = anno.id;
-    img.title = 'Clic derecho para cambiar tamaño o eliminar.';
+    img.title = t('ctx.img_title');
     
     img.style.left = (anno.x * scale) + 'px';
     img.style.top = (anno.y * scale) + 'px';
