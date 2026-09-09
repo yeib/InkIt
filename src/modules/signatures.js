@@ -41,10 +41,29 @@ export function initSignatures(containerId) {
     };
 
     // Sello Formal (Digital Visual Stamp)
+    const stampModal = document.getElementById('stamp-modal');
+    const inputName = document.getElementById('stamp-input-name');
+    const inputDetail = document.getElementById('stamp-input-detail');
+    const btnCancelStamp = document.getElementById('btn-cancel-stamp');
+    const btnGenerateStamp = document.getElementById('btn-generate-stamp');
+
     btnNewStamp.addEventListener('click', () => {
-        const name = prompt("Escribe tu Nombre para el Sello Digital:");
+        stampModal.style.display = 'flex';
+        inputName.value = '';
+        inputDetail.value = '';
+        inputName.focus();
+    });
+
+    btnCancelStamp.addEventListener('click', () => {
+        stampModal.style.display = 'none';
+    });
+
+    btnGenerateStamp.addEventListener('click', () => {
+        const name = inputName.value.trim();
         if (!name) return;
-        const detail = prompt("Escribe tu e-mail, cargo o ID (Opcional):") || "";
+        const detail = inputDetail.value.trim();
+        
+        stampModal.style.display = 'none';
         
         // Crear un canvas temporal para dibujar el sello
         const stampCanvas = document.createElement('canvas');
@@ -59,40 +78,85 @@ export function initSignatures(containerId) {
         sCtx.lineWidth = 2;
         sCtx.strokeRect(1, 1, 348, 98);
         
-        // Icono a la izquierda (Pluma o logo)
-        sCtx.fillStyle = '#003399';
-        sCtx.font = '36px Arial';
-        sCtx.fillText('🖋️', 15, 60);
+        // Cargar el Logo de InkIt para el sello
+        const logoImg = new Image();
+        logoImg.src = '/InkIt_Logo.png';
+        logoImg.onload = () => {
+            // Dibujar el logo en la parte izquierda
+            sCtx.drawImage(logoImg, 10, 15, 45, 45);
+            
+            // Texto estilizado simulando firma a mano alzada bajo el logo
+            sCtx.fillStyle = '#003399';
+            sCtx.font = 'italic 12px "Segoe Script", cursive, Arial';
+            sCtx.fillText('InkIt', 18, 75);
+            sCtx.fillText('Verified', 10, 88);
+            
+            // Separador
+            sCtx.beginPath();
+            sCtx.moveTo(65, 10);
+            sCtx.lineTo(65, 90);
+            sCtx.stroke();
+            
+            // Textos
+            sCtx.fillStyle = '#000000';
+            sCtx.font = 'bold 16px Arial';
+            sCtx.fillText(`Firmado digitalmente por:`, 75, 25);
+            sCtx.font = 'bold 18px Arial';
+            sCtx.fillStyle = '#003399';
+            sCtx.fillText(name, 75, 50);
+            
+            sCtx.fillStyle = '#333333';
+            sCtx.font = '12px Arial';
+            const today = new Date();
+            const dateStr = today.toLocaleString();
+            sCtx.fillText(`Fecha: ${dateStr}`, 75, 70);
+            if (detail) {
+                sCtx.fillText(detail, 75, 88);
+            }
+            
+            const dataUrl = stampCanvas.toDataURL('image/png');
+            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+            saved.push(dataUrl);
+            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
+            
+            renderVault();
+        };
         
-        // Separador
-        sCtx.beginPath();
-        sCtx.moveTo(60, 10);
-        sCtx.lineTo(60, 90);
-        sCtx.stroke();
-        
-        // Textos
-        sCtx.fillStyle = '#000000';
-        sCtx.font = 'bold 16px Arial';
-        sCtx.fillText(`Firmado digitalmente por:`, 70, 25);
-        sCtx.font = 'bold 18px Arial';
-        sCtx.fillStyle = '#003399';
-        sCtx.fillText(name, 70, 50);
-        
-        sCtx.fillStyle = '#333333';
-        sCtx.font = '12px Arial';
-        const today = new Date();
-        const dateStr = today.toLocaleString();
-        sCtx.fillText(`Fecha: ${dateStr}`, 70, 70);
-        if (detail) {
-            sCtx.fillText(detail, 70, 88);
-        }
-        
-        const dataUrl = stampCanvas.toDataURL('image/png');
-        let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
-        saved.push(dataUrl);
-        localStorage.setItem('inkit_signatures', JSON.stringify(saved));
-        
-        renderVault();
+        // Fallback por si la imagen falla en cargar
+        logoImg.onerror = () => {
+            sCtx.fillStyle = '#003399';
+            sCtx.font = '36px Arial';
+            sCtx.fillText('🖋️', 15, 60);
+            // Separador
+            sCtx.beginPath();
+            sCtx.moveTo(65, 10);
+            sCtx.lineTo(65, 90);
+            sCtx.stroke();
+            
+            // Textos
+            sCtx.fillStyle = '#000000';
+            sCtx.font = 'bold 16px Arial';
+            sCtx.fillText(`Firmado digitalmente por:`, 75, 25);
+            sCtx.font = 'bold 18px Arial';
+            sCtx.fillStyle = '#003399';
+            sCtx.fillText(name, 75, 50);
+            
+            sCtx.fillStyle = '#333333';
+            sCtx.font = '12px Arial';
+            const today = new Date();
+            const dateStr = today.toLocaleString();
+            sCtx.fillText(`Fecha: ${dateStr}`, 75, 70);
+            if (detail) {
+                sCtx.fillText(detail, 75, 88);
+            }
+            
+            const dataUrl = stampCanvas.toDataURL('image/png');
+            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+            saved.push(dataUrl);
+            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
+            
+            renderVault();
+        };
     });
 
     // Nueva Firma
@@ -293,7 +357,21 @@ function renderVault() {
         const img = document.createElement('img');
         img.src = dataUrl;
         
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '❌';
+        delBtn.className = 'btn-delete-sig';
+        delBtn.title = 'Eliminar';
+        
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let current = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+            current.splice(index, 1);
+            localStorage.setItem('inkit_signatures', JSON.stringify(current));
+            renderVault();
+        });
+        
         item.appendChild(img);
+        item.appendChild(delBtn);
         
         item.addEventListener('click', () => {
             selectedSignatureBase64 = dataUrl;

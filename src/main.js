@@ -15,7 +15,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Configurar Window Controls
     document.getElementById('titlebar-minimize')?.addEventListener('click', () => appWindow.minimize());
-    document.getElementById('titlebar-maximize')?.addEventListener('click', () => appWindow.toggleMaximize());
+    
+    const maxBtn = document.getElementById('titlebar-maximize');
+    const updateMaxIcon = async () => {
+        if (!maxBtn) return;
+        const isMax = await appWindow.isMaximized();
+        if (isMax) {
+            maxBtn.innerHTML = '<svg viewBox="0 0 10 10"><path d="M 2,2 L 8,2 L 8,8 L 2,8 Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M 4,2 L 4,0 L 10,0 L 10,6 L 8,6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+        } else {
+            maxBtn.innerHTML = '<svg viewBox="0 0 10 10"><path d="M 0,0 0,10 10,10 10,0 Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+        }
+    };
+    
+    maxBtn?.addEventListener('click', async () => {
+        await appWindow.toggleMaximize();
+        setTimeout(updateMaxIcon, 100);
+    });
+    
+    appWindow.onResized(updateMaxIcon);
+
     document.getElementById('titlebar-close')?.addEventListener('click', () => appWindow.close());
 
     // Configurar Hamburger Menu

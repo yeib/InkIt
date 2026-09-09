@@ -34,12 +34,13 @@
 }
 
 .signature-item {
-  background: rgba(255, 255, 255, 0.9); /* Fondo claro para que la firma negra/azul contraste */
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   padding: 8px;
   cursor: pointer;
   transition: var(--transition-smooth);
-  position: relative;
 }
 
 .signature-item:hover {
@@ -53,6 +54,28 @@
   object-fit: contain;
   pointer-events: none;
   -webkit-user-drag: none;
+}
+
+.btn-delete-sig {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid rgba(255, 0, 0, 0.5);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 4px;
+  display: none;
+}
+
+.btn-delete-sig:hover {
+  background: rgba(255, 0, 0, 0.6);
+}
+
+.signature-item:hover .btn-delete-sig {
+  display: block;
 }
 
 /* Modal */

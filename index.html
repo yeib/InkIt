@@ -13,7 +13,7 @@
   <body>
     <div id="app">
       <!-- Toolbar (Header) -->
-      <header class="toolbar glass-panel">
+      <header class="toolbar glass-panel" data-tauri-drag-region>
         <div class="toolbar-left" data-tauri-drag-region style="flex-grow: 1; display: flex; align-items: center; height: 100%; gap: 12px;">
           <!-- Menú Hamburguesa -->
           <div class="menu-dropdown-container">
@@ -32,7 +32,7 @@
           </div>
           <span class="app-title" data-tauri-drag-region>🖋️ InkIt</span>
         </div>
-        <div class="toolbar-center">
+        <div class="toolbar-center" data-tauri-drag-region>
           <button class="btn-glass" id="btn-open-pdf">Abrir PDF</button>
           <div class="divider" style="margin: 0 8px;"></div>
           <button class="btn-glass primary" id="btn-pointer">🖱️ Seleccionar</button>
@@ -102,6 +102,22 @@
     </div>
 
     <!-- Modal para Dibujar Firma -->
+    <!-- Sello Digital Modal -->
+    <div class="modal-overlay" id="stamp-modal" style="display: none;">
+      <div class="glass-panel modal-content" style="width: 400px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <h3 style="margin: 0;">Crear Sello Digital</h3>
+        <p style="margin: 0; font-size: 14px; opacity: 0.8;">Ingresa tus datos para generar un sello visual profesional.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <input type="text" id="stamp-input-name" class="glass-input" placeholder="Nombre completo (Ej: Yeib)" />
+          <input type="text" id="stamp-input-detail" class="glass-input" placeholder="E-mail, Cargo o ID (Opcional)" />
+        </div>
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="btn-glass" id="btn-cancel-stamp">Cancelar</button>
+          <button class="btn-glass primary" id="btn-generate-stamp">Generar Sello</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-overlay" id="signature-modal" style="display: none;">
       <div class="modal-content glass-panel">
         <h3>Dibuja tu firma</h3>
