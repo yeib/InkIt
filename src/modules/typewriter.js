@@ -1,9 +1,11 @@
 import { addImageAnnotationToPage } from './signatures.js';
+import { commitAction } from "./state.js";
 
 export let annotations = [];
 
 let isTypewriterMode = false;
 let currentFontSize = 16;
+let currentBgColor = "transparent";
 let currentColor = '#000000';
 let activeAnnotation = null;
 let pendingStampType = null;
@@ -71,13 +73,18 @@ export function initTypewriter(containerId) {
     const btnTypewriter = document.getElementById('btn-typewriter');
     const toolbar = document.getElementById('typewriter-toolbar');
     const sizeInput = document.getElementById('tw-size');
-    const colorBtns = document.querySelectorAll('.color-btn');
-    const stampBtns = document.querySelectorAll('.stamp-btn');
+    const colorBtns = toolbar.querySelectorAll('.color-btn');
+    const stampBtns = toolbar.querySelectorAll('.stamp-btn');
+    const bgSelect = document.getElementById('tw-bg-color');
+
+    bgSelect.addEventListener('change', (e) => {
+        currentBgColor = e.target.value;
+    });
     
     // Toggle Typewriter Mode
     btnTypewriter.addEventListener('click', () => {
         if (!isTypewriterMode) {
-            isTypewriterMode = true;
+            isTypewriterMode = true; currentColor = '#000000'; colorBtns.forEach(b => b.classList.remove('active')); if(colorBtns[0]) colorBtns[0].classList.add('active');
             toolbar.style.display = 'flex';
             pdfContainer.style.cursor = 'text';
             updateAnnotationsMode('typewriter');
@@ -216,6 +223,11 @@ function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSize, colo
     div.style.top = (baseY * currentScale) + 'px';
     div.style.fontSize = (baseFontSize * currentScale) + 'px';
     div.style.color = color;
+        
+    const hexBg = currentBgColor === 'white' ? '#ffffff' : (currentBgColor === 'gray' ? '#f0f0f0' : (currentBgColor === 'black' ? '#000000' : 'transparent'));
+    div.style.backgroundColor = hexBg;
+    div.style.padding = currentBgColor !== 'transparent' ? '2px 4px' : '0px';
+    if(currentBgColor === 'black' && color === '#000000') div.style.color = '#ffffff'; // Auto invert black text on black bg
     
     wrapper.appendChild(div);
     div.focus();
@@ -232,18 +244,20 @@ function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSize, colo
             if (activeAnnotation === div) clearActiveAnnotation();
             div.remove();
         } else {
-            const newAnno = {
-                id: Date.now().toString(),
-                pageNum: pageNum,
+            const id = Date.now().toString();
+            div.dataset.id = id;
+            annotations.push({
+                id,
+                pageNum,
+                text,
                 x: baseX,
                 y: baseY,
-                text: text,
                 fontSize: baseFontSize,
-                color: color
-            };
-            annotations.push(newAnno);
-            div.dataset.id = newAnno.id;
-            setupExistingAnnotation(div, newAnno, currentScale);
+                color,
+                bgColor: currentBgColor
+            });
+            commitAction();
+            const newAnno = annotations[annotations.length - 1]; setupExistingAnnotation(div, newAnno, currentScale);
         }
     };
     div.addEventListener('blur', onBlur);
@@ -286,8 +300,10 @@ function setupExistingAnnotation(div, anno, scale) {
             if (activeAnnotation === div) clearActiveAnnotation();
             div.remove();
             annotations = annotations.filter(a => a.id !== anno.id);
+            commitAction();
         } else {
             anno.text = text;
+            commitAction();
         }
     });
 
@@ -333,6 +349,7 @@ function setupExistingAnnotation(div, anno, scale) {
 
             anno.x = parseFloat(div.style.left) / currentScale;
             anno.y = parseFloat(div.style.top) / currentScale;
+            commitAction();
         }
     };
 
@@ -346,3 +363,5 @@ export function renderAnnotationsForPage(wrapper, pageNum, scale) {
         renderAnnotation(anno, wrapper, scale);
     });
 }
+
+export function setAnnotations(newAnnotations) { annotations.length = 0; annotations.push(...newAnnotations); }

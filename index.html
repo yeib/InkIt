@@ -1,6 +1,35 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+        fetch('http://localhost:11434/log', { method: 'POST', body: msg + ' at ' + lineNo });
+        const div = document.createElement('div');
+        div.style.position = 'fixed';
+        div.style.top = '10px';
+        div.style.left = '10px';
+        div.style.zIndex = '999999';
+        div.style.background = 'red';
+        div.style.color = 'white';
+        div.style.padding = '10px';
+        div.innerText = 'ERR: ' + msg + '\nLine: ' + lineNo + '\nCol: ' + columnNo + (error ? '\nStack: ' + error.stack : '');
+        document.body.appendChild(div);
+        return false;
+      };
+      window.addEventListener("unhandledrejection", function(e) {
+        const div = document.createElement('div');
+        div.style.position = 'fixed';
+        div.style.top = '100px';
+        div.style.left = '10px';
+        div.style.zIndex = '999999';
+        div.style.background = 'orange';
+        div.style.color = 'black';
+        div.style.padding = '10px';
+        div.innerText = 'PROMISE ERR: ' + (e.reason ? e.reason.stack || e.reason : e);
+        document.body.appendChild(div);
+      });
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>InkIt</title>
@@ -36,12 +65,21 @@
             <a href="https://yeib.cl" target="_blank" data-i18n="app.by" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
           </span>
         </div>
-        <div class="toolbar-center" data-tauri-drag-region>
+        <div class="toolbar-center" data-tauri-drag-region style="display: flex; gap: 4px; align-items: center;">
+          <button class="btn-icon" id="btn-undo" title="Deshacer (Ctrl+Z)" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M3 10h10a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5H9M3 10l5 5M3 10l5-5"/></svg>
+          </button>
+          <button class="btn-icon" id="btn-redo" title="Rehacer (Ctrl+Y)" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M21 10H11a5 5 0 0 0-5 5v2a5 5 0 0 0 5 5h4M21 10l-5 5M21 10l-5-5"/></svg>
+          </button>
+          <div class="divider" style="margin: 0 8px;"></div>
           <button class="btn-glass" id="btn-open-pdf" data-i18n="btn.open">Open PDF</button>
           <div class="divider" style="margin: 0 8px;"></div>
           <button class="btn-glass primary" id="btn-pointer" data-i18n="btn.pointer">🖱️ Select</button>
           <button class="btn-glass" id="btn-typewriter" data-i18n="btn.typewriter">🔤 Text</button>
-          <button class="btn-glass" id="btn-sign" data-i18n="btn.sign">🖋️ Sign</button>
+          <button class="btn-glass" id="btn-highlight" data-i18n="btn.highlight">🖍️ Highlight</button>
+          <button class="btn-glass" id="btn-stamp" data-i18n="btn.stamp">🪪 Stamp</button>
+          <button class="btn-glass" id="btn-esign" data-i18n="btn.esign">✒️ e-Sign</button>
         </div>
         <div class="toolbar-right window-controls">
           <div class="window-btn" id="titlebar-minimize">
@@ -71,6 +109,15 @@
         </div>
         <div class="divider"></div>
         <div class="tool-group">
+          <select id="tw-bg-color" class="glass-select" style="padding: 2px; font-size: 12px; border-radius: 4px; background: rgba(255,255,255,0.8);">
+            <option value="transparent" data-i18n="tw.bg.transparent">Transparent BG</option>
+            <option value="white" data-i18n="tw.bg.white">White BG</option>
+            <option value="gray" data-i18n="tw.bg.gray">Gray BG</option>
+            <option value="black" data-i18n="tw.bg.black">Black BG</option>
+          </select>
+        </div>
+        <div class="divider"></div>
+        <div class="tool-group">
           <span class="group-label" data-i18n="tw.stamps">Stamps:</span>
           <button class="btn-glass stamp-btn" data-stamp="✓">✓</button>
           <button class="btn-glass stamp-btn" data-stamp="✗">✗</button>
@@ -78,21 +125,45 @@
         </div>
       </div>
 
+      <!-- Sub-Toolbar: Highlight Controls (Oculto por defecto) -->
+      <div class="typewriter-toolbar glass-panel" id="highlight-toolbar" style="display: none;">
+        <div class="tool-group">
+          <label data-i18n="hl.color">Color:</label>
+          <button class="color-btn active" data-color="rgba(255, 255, 0, 0.4)" style="background: rgba(255, 255, 0, 0.4);"></button>
+          <button class="color-btn" data-color="rgba(0, 255, 0, 0.4)" style="background: rgba(0, 255, 0, 0.4);"></button>
+          <button class="color-btn" data-color="rgba(0, 255, 255, 0.4)" style="background: rgba(0, 255, 255, 0.4);"></button>
+          <button class="color-btn" data-color="rgba(255, 0, 255, 0.4)" style="background: rgba(255, 0, 255, 0.4);"></button>
+        </div>
+      </div>
+
       <!-- Workspace Principal -->
       <main class="workspace">
         
         <!-- Bóveda de Firmas (Dropdown Flotante) -->
-        <div class="signature-vault glass-panel" id="signature-vault" style="display: none;">
+        <!-- Bóveda de Timbres (Visual/Draw/Import) -->
+        <div class="signature-vault glass-panel" id="stamp-vault" style="display: none;">
           <div class="vault-header">
-            <span data-i18n="vault.title">My Signatures</span>
+            <span data-i18n="vault.stamp_title">My Stamps & Marks</span>
+          </div>
+          <div style="display: flex; gap: 8px; padding: 8px 12px 0 12px;">
+            <button class="btn-glass primary" id="btn-sig-import-vault" style="flex: 1;" data-i18n="modal.btn.import">+ Importar</button>
+            <button class="btn-glass primary" id="btn-new-signature" style="flex: 1;" data-i18n="vault.new_sig">+ Dibujar</button>
+          </div>
+          <div class="vault-list" id="stamp-list">
+            <p class="empty-msg" data-i18n="vault.empty_stamps">No saved stamps.</p>
+          </div>
+        </div>
+
+        <!-- Bóveda de Firmas (Digital Identities) -->
+        <div class="signature-vault glass-panel" id="esign-vault" style="display: none;">
+          <div class="vault-header">
+            <span data-i18n="vault.esign_title">Digital Identities</span>
             <div style="display: flex; gap: 4px;">
-              <button class="btn-glass" id="btn-new-stamp" data-i18n="vault.new_stamp">+ Stamp</button>
-              <button class="btn-glass" id="btn-new-signature" data-i18n="vault.new_sig">+ Draw</button>
+              <button class="btn-glass" id="btn-new-identity" data-i18n="vault.new_identity">+ Identity</button>
             </div>
           </div>
-          <div class="vault-list" id="vault-list">
-            <!-- Las firmas guardadas aparecerán aquí -->
-            <p class="empty-msg" data-i18n="vault.empty">No saved signatures.</p>
+          <div class="vault-list" id="esign-list">
+            <p class="empty-msg" data-i18n="vault.empty_identities">No saved identities.</p>
           </div>
         </div>
 
@@ -112,8 +183,8 @@
         <h3 style="margin: 0;" data-i18n="modal.stamp.title">Create Digital Stamp</h3>
         <p style="margin: 0; font-size: 14px; opacity: 0.8;" data-i18n="modal.stamp.desc">Enter your details to generate a professional visual stamp.</p>
         <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
-          <input type="text" id="stamp-input-name" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name (e.g. Yeib)" style="width: 100%; box-sizing: border-box;" />
-          <input type="text" id="stamp-input-detail" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail, Role or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-name" autocomplete="off" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name (e.g. Yeib)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-detail" autocomplete="off" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail, Role or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
         </div>
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
           <button class="btn-glass" id="btn-cancel-stamp" data-i18n="modal.btn.cancel">Cancel</button>
@@ -127,7 +198,6 @@
         <h3 data-i18n="modal.sig.title">Draw your signature</h3>
         <canvas id="signature-canvas" width="500" height="250"></canvas>
         <div class="modal-actions">
-          <button class="btn-glass" id="btn-sig-import" data-i18n="modal.btn.import">Import</button>
           <button class="btn-glass" id="btn-sig-clear" data-i18n="modal.btn.clear">Clear</button>
           <button class="btn-glass" id="btn-sig-cancel" data-i18n="modal.btn.cancel">Cancel</button>
           <button class="btn-glass primary" id="btn-sig-save" data-i18n="modal.btn.save">Save</button>

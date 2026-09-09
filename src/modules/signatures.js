@@ -1,3 +1,4 @@
+import { commitAction } from "./state.js";
 import { t } from "./translations.js";
 export let imageAnnotations = [];
 
@@ -34,6 +35,7 @@ export function addImageAnnotationToPage(dataUrl, pageNum, x, y, customWidth = n
         };
         
         imageAnnotations.push(newImgAnno);
+        commitAction();
         if (pageWrapper) {
             renderImageAnnotation(newImgAnno, pageWrapper, currentScale);
         }
@@ -44,8 +46,10 @@ export function addImageAnnotationToPage(dataUrl, pageNum, x, y, customWidth = n
 export function initSignatures(containerId) {
     pdfContainer = document.getElementById(containerId);
     
-    const btnSign = document.getElementById('btn-sign');
-    const vault = document.getElementById('signature-vault');
+    const btnStamp = document.getElementById('btn-stamp');
+    const btnEsign = document.getElementById('btn-esign');
+    const stampVault = document.getElementById('stamp-vault');
+    const esignVault = document.getElementById('esign-vault');
     const btnNewSig = document.getElementById('btn-new-signature');
     const modal = document.getElementById('signature-modal');
     
@@ -53,22 +57,34 @@ export function initSignatures(containerId) {
     canvas = document.getElementById('signature-canvas');
     ctx = canvas.getContext('2d');
     
-    const btnNewStamp = document.getElementById('btn-new-stamp');
+    const btnNewIdentity = document.getElementById('btn-new-identity');
 
-    // Toggle Bóveda
-    btnSign.addEventListener('click', () => {
-        const isVisible = vault.style.display === 'flex';
-        vault.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) {
-            renderVault();
-        } else {
-            window.disableSignatures();
-        }
+    // Migrate old signatures to stamps
+    const oldSigs = localStorage.getItem('inkit_signatures');
+    if (oldSigs) {
+        localStorage.setItem('inkit_stamps', oldSigs);
+        localStorage.removeItem('inkit_signatures');
+    }
+
+    btnStamp.addEventListener('click', () => {
+        esignVault.style.display = 'none';
+        const isVisible = stampVault.style.display === 'flex';
+        stampVault.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) renderVaults();
+        else window.disableSignatures();
+    });
+
+    btnEsign.addEventListener('click', () => {
+        stampVault.style.display = 'none';
+        const isVisible = esignVault.style.display === 'flex';
+        esignVault.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) renderVaults();
+        else window.disableSignatures();
     });
 
     window.disableSignatures = () => {
         isStampingMode = false;
-        vault.style.display = 'none';
+        stampVault.style.display = 'none'; esignVault.style.display = 'none';
         pdfContainer.style.cursor = 'default';
         selectedSignatureBase64 = null;
     };
@@ -77,13 +93,15 @@ export function initSignatures(containerId) {
     const stampModal = document.getElementById('stamp-modal');
     const inputName = document.getElementById('stamp-input-name');
     const inputDetail = document.getElementById('stamp-input-detail');
+    const inputExtra = document.getElementById('stamp-input-extra');
     const btnCancelStamp = document.getElementById('btn-cancel-stamp');
     const btnGenerateStamp = document.getElementById('btn-generate-stamp');
 
-    btnNewStamp.addEventListener('click', () => {
+    btnNewIdentity.addEventListener('click', () => {
         stampModal.style.display = 'flex';
         inputName.value = '';
         inputDetail.value = '';
+        if(inputExtra) inputExtra.value = '';
         inputName.focus();
     });
 
@@ -95,6 +113,7 @@ export function initSignatures(containerId) {
         const name = inputName.value.trim();
         if (!name) return;
         const detail = inputDetail.value.trim();
+        const extra = inputExtra ? inputExtra.value.trim() : '';
         
         stampModal.style.display = 'none';
         
@@ -135,25 +154,27 @@ export function initSignatures(containerId) {
             sCtx.fillStyle = '#000000';
             sCtx.font = 'bold 16px Arial';
             sCtx.fillText(t('stamp.signed_by'), 75, 25);
-            sCtx.font = 'bold 18px Arial';
+            sCtx.font = 'bold 16px Arial';
             sCtx.fillStyle = '#003399';
-            sCtx.fillText(name, 75, 50);
+            sCtx.fillText(name, 75, 45);
             
             sCtx.fillStyle = '#333333';
-            sCtx.font = '12px Arial';
+            sCtx.font = '11px Arial';
             const today = new Date();
             const dateStr = today.toLocaleString();
-            sCtx.fillText(`${t('stamp.date_label')} ${dateStr}`, 75, 70);
+            sCtx.fillText(`${t('stamp.date_label')} ${dateStr}`, 75, 60);
             if (detail) {
-                sCtx.fillText(detail, 75, 88);
+                sCtx.fillText(detail, 75, 75);
+            }
+            if (extra) {
+                sCtx.fillText(extra, 75, 90);
             }
             
             const dataUrl = stampCanvas.toDataURL('image/png');
-            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+            let saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
             saved.push(dataUrl);
-            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
-            
-            renderVault();
+            localStorage.setItem('inkit_esigns', JSON.stringify(saved));
+            renderVaults(); esignVault.style.display = "flex";
         };
         
         // Fallback por si la imagen falla en cargar
@@ -171,25 +192,27 @@ export function initSignatures(containerId) {
             sCtx.fillStyle = '#000000';
             sCtx.font = 'bold 16px Arial';
             sCtx.fillText(t('stamp.signed_by'), 75, 25);
-            sCtx.font = 'bold 18px Arial';
+            sCtx.font = 'bold 16px Arial';
             sCtx.fillStyle = '#003399';
-            sCtx.fillText(name, 75, 50);
+            sCtx.fillText(name, 75, 45);
             
             sCtx.fillStyle = '#333333';
-            sCtx.font = '12px Arial';
+            sCtx.font = '11px Arial';
             const today = new Date();
             const dateStr = today.toLocaleString();
-            sCtx.fillText(`${t('stamp.date_label')} ${dateStr}`, 75, 70);
+            sCtx.fillText(`${t('stamp.date_label')} ${dateStr}`, 75, 60);
             if (detail) {
-                sCtx.fillText(detail, 75, 88);
+                sCtx.fillText(detail, 75, 75);
+            }
+            if (extra) {
+                sCtx.fillText(extra, 75, 90);
             }
             
             const dataUrl = stampCanvas.toDataURL('image/png');
-            let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+            let saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
             saved.push(dataUrl);
-            localStorage.setItem('inkit_signatures', JSON.stringify(saved));
-            
-            renderVault();
+            localStorage.setItem('inkit_esigns', JSON.stringify(saved));
+            renderVaults(); esignVault.style.display = "flex";
         };
     });
 
@@ -197,14 +220,14 @@ export function initSignatures(containerId) {
     btnNewSig.addEventListener('click', () => {
         clearCanvas();
         modal.style.display = 'flex';
-        vault.style.display = 'none';
+        stampVault.style.display = 'none'; esignVault.style.display = 'none';
     });
 
     // Lógica de Dibujo
     setupCanvasDrawing();
 
     // Botones del Modal
-    document.getElementById('btn-sig-import').addEventListener('click', importSignature);
+    document.getElementById('btn-sig-import-vault').addEventListener('click', importSignature);
     document.getElementById('btn-sig-clear').addEventListener('click', clearCanvas);
     document.getElementById('btn-sig-cancel').addEventListener('click', () => {
         modal.style.display = 'none';
@@ -213,7 +236,7 @@ export function initSignatures(containerId) {
     document.getElementById('btn-sig-save').addEventListener('click', () => {
         saveSignature();
         modal.style.display = 'none';
-        vault.style.display = 'flex';
+        stampVault.style.display = 'flex';
     });
 
     // Manejar estampar en el PDF
@@ -258,6 +281,7 @@ export function initSignatures(containerId) {
             };
             
             imageAnnotations.push(newImgAnno);
+        commitAction();
             renderImageAnnotation(newImgAnno, pageWrapper, currentScale);
         };
         img.src = currentSigBase64;
@@ -266,7 +290,7 @@ export function initSignatures(containerId) {
         isStampingMode = false;
         selectedSignatureBase64 = null;
         pdfContainer.style.cursor = 'default';
-        btnSign.classList.remove('primary'); // Reset color if it was highlighted
+        document.getElementById('btn-stamp')?.classList.remove('primary'); document.getElementById('btn-esign')?.classList.remove('primary'); // Reset color if it was highlighted
     });
     // Setup Context Menu for Signatures
     const sigCtxMenu = document.getElementById('sig-context-menu');
@@ -274,6 +298,7 @@ export function initSignatures(containerId) {
     document.addEventListener('click', (e) => {
         if (sigCtxMenu && sigCtxMenu.style.display === 'flex' && !sigCtxMenu.contains(e.target)) {
             sigCtxMenu.style.display = 'none';
+            commitAction();
         }
     });
 
@@ -282,6 +307,7 @@ export function initSignatures(containerId) {
             ctxMenuActiveImg.remove();
             imageAnnotations = imageAnnotations.filter(a => a.id !== ctxMenuActiveAnno.id);
             sigCtxMenu.style.display = 'none';
+            commitAction();
         }
     });
     
@@ -312,6 +338,7 @@ export function initSignatures(containerId) {
             ctxMenuActiveImg.style.height = (newH * ctxMenuActiveScale) + 'px';
             
             sigCtxMenu.style.display = 'none';
+            commitAction();
         }
     };
     
@@ -386,16 +413,22 @@ async function importSignature() {
             filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }]
         });
         
-        if (selected) {
-            const bytes = await invoke('read_pdf', { path: selected });
-            const uint8Array = new Uint8Array(bytes);
-            const blob = new Blob([uint8Array]);
-            const url = URL.createObjectURL(blob);
-            
-            const img = new Image();
-            img.onload = () => {
-                clearCanvas();
-                // Dibujar imagen escalada
+            if (selected) {
+                const modal = document.getElementById('signature-modal');
+                const stampVault = document.getElementById('stamp-vault');
+                
+                const bytes = await invoke('read_pdf', { path: selected });
+                const uint8Array = new Uint8Array(bytes);
+                const blob = new Blob([uint8Array]);
+                const url = URL.createObjectURL(blob);
+                
+                const img = new Image();
+                img.onload = () => {
+                    modal.style.display = 'flex';
+                    stampVault.style.display = 'none';
+                    
+                    clearCanvas();
+                    // Dibujar imagen escalada
                 const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
                 const x = (canvas.width / 2) - (img.width / 2) * scale;
                 const y = (canvas.height / 2) - (img.height / 2) * scale;
@@ -428,56 +461,74 @@ function saveSignature() {
     // Comprobar si está en blanco no es trivial sin analizar píxeles, asumimos que dibujó algo.
     const dataUrl = canvas.toDataURL('image/png');
     
-    let saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
-    saved.push(dataUrl);
-    localStorage.setItem('inkit_signatures', JSON.stringify(saved));
-    
-    renderVault();
+    let saved = JSON.parse(localStorage.getItem('inkit_stamps') || '[]');
+            saved.push(dataUrl);
+            localStorage.setItem('inkit_stamps', JSON.stringify(saved));
+            renderVaults();
 }
 
-function renderVault() {
-    const list = document.getElementById('vault-list');
-    const saved = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
+function renderVaults() {
+    // Render Stamps
+    const stampList = document.getElementById('stamp-list');
+    const savedStamps = JSON.parse(localStorage.getItem('inkit_stamps') || '[]');
     
-    list.innerHTML = '';
-    
-    if (saved.length === 0) {
-        list.innerHTML = `<p class="empty-msg">${t('vault.empty')}</p>`;
-        return;
+    stampList.innerHTML = '';
+    if (savedStamps.length === 0) {
+        stampList.innerHTML = `<p class="empty-msg">${t('vault.empty_stamps')}</p>`;
+    } else {
+        savedStamps.forEach((dataUrl, index) => {
+            const item = createVaultItem(dataUrl, index, 'inkit_stamps');
+            stampList.appendChild(item);
+        });
     }
+
+    // Render eSigns
+    const esignList = document.getElementById('esign-list');
+    const savedEsigns = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
     
-    saved.forEach((dataUrl, index) => {
-        const item = document.createElement('div');
-        item.className = 'signature-item';
-        
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = '❌';
-        delBtn.className = 'btn-delete-sig';
-        delBtn.title = t('vault.delete_title');
-        
-        delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            let current = JSON.parse(localStorage.getItem('inkit_signatures') || '[]');
-            current.splice(index, 1);
-            localStorage.setItem('inkit_signatures', JSON.stringify(current));
-            renderVault();
+    esignList.innerHTML = '';
+    if (savedEsigns.length === 0) {
+        esignList.innerHTML = `<p class="empty-msg">${t('vault.empty_identities')}</p>`;
+    } else {
+        savedEsigns.forEach((dataUrl, index) => {
+            const item = createVaultItem(dataUrl, index, 'inkit_esigns');
+            esignList.appendChild(item);
         });
-        
-        item.appendChild(img);
-        item.appendChild(delBtn);
-        
-        item.addEventListener('click', () => {
-            selectedSignatureBase64 = dataUrl;
-            isStampingMode = true;
-            pdfContainer.style.cursor = 'crosshair';
-            document.getElementById('signature-vault').style.display = 'none';
-        });
-        
-        list.appendChild(item);
+    }
+}
+
+function createVaultItem(dataUrl, index, storageKey) {
+    const item = document.createElement('div');
+    item.className = 'signature-item';
+    
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    
+    const delBtn = document.createElement('button');
+    delBtn.innerHTML = '❌';
+    delBtn.className = 'btn-delete-sig';
+    delBtn.title = t('vault.delete_title');
+    
+    delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        let current = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        current.splice(index, 1);
+        localStorage.setItem(storageKey, JSON.stringify(current));
+        renderVaults();
     });
+    
+    item.appendChild(img);
+    item.appendChild(delBtn);
+    
+    item.addEventListener('click', () => {
+        selectedSignatureBase64 = dataUrl;
+        isStampingMode = true;
+        pdfContainer.style.cursor = 'crosshair';
+        document.getElementById('stamp-vault').style.display = 'none';
+        document.getElementById('esign-vault').style.display = 'none';
+    });
+    
+    return item;
 }
 
 // Funciones de renderizado para pdfViewer
@@ -527,6 +578,7 @@ export function renderImageAnnotation(anno, wrapper, scale) {
             // Guardar nueva posición
             anno.x = parseFloat(img.style.left) / scale;
             anno.y = parseFloat(img.style.top) / scale;
+            commitAction();
         }
     };
 
@@ -568,3 +620,5 @@ export function renderImageAnnotationsForPage(wrapper, pageNum, scale) {
         renderImageAnnotation(anno, wrapper, scale);
     });
 }
+
+export function setImageAnnotations(newAnnotations) { imageAnnotations.length = 0; imageAnnotations.push(...newAnnotations); }

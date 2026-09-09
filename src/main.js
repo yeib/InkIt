@@ -6,9 +6,13 @@ import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
 import { applyTranslations, setLang, getLang, t } from './modules/translations.js';
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import { initSignatures, imageAnnotations, renderImageAnnotationsForPage } from './modules/signatures.js';
+import { initHighlights, highlightAnnotations } from "./modules/highlights.js";
 import { initTypewriter, renderAnnotationsForPage, annotations, updateAnnotationsMode } from './modules/typewriter.js';
+import { initHistoryUI } from "./modules/history_ui.js";
+import { globalHistory } from './modules/history.js';
+import { getGlobalState, restoreGlobalState } from './modules/state.js';
 import { initPdfViewer, loadDocument } from "./core/pdfViewer.js";
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -43,7 +47,6 @@ document.getElementById('btn-about-close').addEventListener('click', () => {
     aboutModal.style.display = 'none';
 });
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.mjs';
 
 let currentPdfPath = null;
 
@@ -153,6 +156,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                     }
 
+                    // 2.5 Procesar highlights
+                    for (const hl of highlightAnnotations) {
+                        const page = pdfDoc.getPage(hl.pageNum - 1);
+                        const { height: pageHeight } = page.getSize();
+                        
+                        if (hl.points.length > 1) {
+                            let pathData = `M ${hl.points[0].x} ${pageHeight - hl.points[0].y}`;
+                            for (let i = 1; i < hl.points.length; i++) {
+                                pathData += ` L ${hl.points[i].x} ${pageHeight - hl.points[i].y}`;
+                            }
+                            
+                            // Parse rgba to pdf-lib rgb and extract opacity
+                            let r = 1, g = 1, b = 0, opacity = 0.4;
+                            const rgbaMatch = hl.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                            if (rgbaMatch) {
+                                r = parseInt(rgbaMatch[1]) / 255;
+                                g = parseInt(rgbaMatch[2]) / 255;
+                                b = parseInt(rgbaMatch[3]) / 255;
+                                opacity = rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1.0;
+                            }
+                            
+                            page.drawSvgPath(pathData, {
+                                borderColor: rgb(r, g, b),
+                                borderWidth: 15,
+                                borderOpacity: opacity,
+                                color: undefined // sin relleno
+                            });
+                        }
+                    }
+
                     // 3. Procesar e incrustar textos
                     for (const textAnno of annotations) {
                         const page = pdfDoc.getPage(textAnno.pageNum - 1);
@@ -160,6 +193,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         const pdfY = pageHeight - textAnno.y - textAnno.fontSize;
                         
+                        if (textAnno.bgColor && textAnno.bgColor !== 'transparent') {
+                            const estimatedWidth = textAnno.text.length * (textAnno.fontSize * 0.55);
+                            let r=1, g=1, b=1;
+                            if (textAnno.bgColor === 'black') { r=0; g=0; b=0; }
+                            else if (textAnno.bgColor === 'gray') { r=0.94; g=0.94; b=0.94; }
+                            page.drawRectangle({
+                                x: textAnno.x - 2,
+                                y: pdfY - 2,
+                                width: estimatedWidth + 4,
+                                height: textAnno.fontSize + 4,
+                                color: rgb(r, g, b),
+                            });
+                        }
+
                         page.drawText(textAnno.text, {
                             x: textAnno.x,
                             y: pdfY,
@@ -269,10 +316,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Manejo unificado de Herramientas (Radio Buttons)
     const btnPointer = document.getElementById('btn-pointer');
     const btnTypewriter = document.getElementById('btn-typewriter');
-    const btnSign = document.getElementById('btn-sign');
+    const btnStamp = document.getElementById('btn-stamp');
+    const btnEsign = document.getElementById('btn-esign');
+    const btnHighlight = document.getElementById('btn-highlight');
 
     const updateToolButtons = (activeBtnId) => {
-        [btnPointer, btnTypewriter, btnSign].forEach(btn => {
+        [btnPointer, btnTypewriter, btnStamp, btnEsign, btnHighlight].forEach(btn => {
             if (btn && btn.id === activeBtnId) {
                 btn.classList.add('primary');
             } else if (btn) {
@@ -286,6 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateToolButtons('btn-pointer');
             if (window.disableTypewriter) window.disableTypewriter();
             if (window.disableSignatures) window.disableSignatures();
+            if (window.disableHighlights) window.disableHighlights();
             import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
         });
     }
@@ -294,15 +344,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnTypewriter.addEventListener('click', () => {
             updateToolButtons('btn-typewriter');
             if (window.disableSignatures) window.disableSignatures();
+            if (window.disableHighlights) window.disableHighlights();
             import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('typewriter'));
         });
     }
 
-    if (btnSign) {
-        btnSign.addEventListener('click', () => {
-            updateToolButtons('btn-sign');
+    if (btnHighlight) {
+        btnHighlight.addEventListener('click', () => {
+            updateToolButtons('btn-highlight');
             if (window.disableTypewriter) window.disableTypewriter();
+            if (window.disableSignatures) window.disableSignatures();
             import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+            if (window.enableHighlights) window.enableHighlights();
+        });
+    }
+
+    if (btnStamp) {
+        btnStamp.addEventListener('click', () => {
+            // Allow deselecting the active tool button
+            if (btnStamp.classList.contains('primary')) {
+                updateToolButtons('btn-pointer');
+                if (window.disableSignatures) window.disableSignatures();
+                import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+                return;
+            }
+            updateToolButtons('btn-stamp');
+            if (window.disableTypewriter) window.disableTypewriter();
+            if (window.disableHighlights) window.disableHighlights();
+            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+            // Note: btnStamp listener in signatures.js will open the vault
+        });
+    }
+    
+    if (btnEsign) {
+        btnEsign.addEventListener('click', () => {
+            if (btnEsign.classList.contains('primary')) {
+                updateToolButtons('btn-pointer');
+                if (window.disableSignatures) window.disableSignatures();
+                import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+                return;
+            }
+            updateToolButtons('btn-esign');
+            if (window.disableTypewriter) window.disableTypewriter();
+            if (window.disableHighlights) window.disableHighlights();
+            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+            // Note: btnEsign listener in signatures.js will open the vault
         });
     }
 
@@ -311,6 +397,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Inicializar herramienta Typewriter
     initTypewriter('pdf-viewer');
+    initHighlights('pdf-viewer');
     
     // Inicializar Bóveda de Firmas
     initSignatures('pdf-viewer');
@@ -338,4 +425,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             await message(t('alert.error_open'), { title: t('alert.title.error'), kind: 'error' });
         }
     });
+
+    // Handle Drag & Drop with Tauri v2
+    try {
+        getCurrentWindow().onDragDropEvent(async (event) => {
+            if (event.payload.type === 'drop') {
+                const paths = event.payload.paths;
+                if (paths && paths.length > 0) {
+                    const selectedPath = paths[0];
+                    if (selectedPath.toLowerCase().endsWith('.pdf')) {
+                        console.log("PDF Dropped:", selectedPath);
+                        currentPdfPath = selectedPath;
+                        try {
+                            const pdfBytes = await invoke('read_pdf', { path: selectedPath });
+                            const uint8Array = new Uint8Array(pdfBytes);
+                            await loadDocument(uint8Array);
+                        } catch (e) {
+                            console.error("Error loading dropped PDF:", e);
+                            await message(t('alert.error_open'), { title: t('alert.title.error'), kind: 'error' });
+                        }
+                    } else {
+                        await message("Only PDF files are supported.", { title: "InkIt", kind: 'warning' });
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.warn('Tauri window listener error', e);
+    }
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    currentPdfPath = file.name;
+                    await loadDocument(new Uint8Array(arrayBuffer));
+                } catch (err) {
+                    console.error("Error loading HTML5 dropped PDF:", err);
+                }
+            }
+        }
+    };
+
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
 });

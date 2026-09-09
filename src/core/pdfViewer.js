@@ -1,12 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { renderAnnotationsForPage } from '../modules/typewriter.js';
+import { attachHighlightOverlay } from "../modules/highlights.js";
 import { renderImageAnnotationsForPage } from '../modules/signatures.js';
 
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
 // Configurar el worker (usando la misma versión que la librería)
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 let currentPdf = null;
 let currentScale = 1.2;
@@ -138,6 +138,7 @@ async function renderPage(pageNum) {
     // Dibujar las anotaciones guardadas para esta página
     renderAnnotationsForPage(pageWrapper, pageNum, currentScale);
     renderImageAnnotationsForPage(pageWrapper, pageNum, currentScale);
+    attachHighlightOverlay(pageWrapper, pageNum, currentScale);
 }
 
 export async function exportCurrentPageAsPng() {
@@ -183,6 +184,12 @@ export async function exportCurrentPageAsPng() {
     const outputScale = window.devicePixelRatio || 1;
     const finalScale = scale * outputScale;
 
+    // 1.5 Dibujar highlights
+    const hlCanvas = activeWrapper.querySelector(".highlight-canvas");
+    if (hlCanvas) {
+        ctx.drawImage(hlCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+    }
+
     // 2. Dibujar imágenes (Firmas)
     const { imageAnnotations } = await import('../modules/signatures.js');
     const pageImages = imageAnnotations.filter(a => a.pageNum === pageNum);
@@ -205,7 +212,14 @@ export async function exportCurrentPageAsPng() {
     
     pageTexts.forEach(anno => {
         ctx.font = `${anno.fontSize * finalScale}px sans-serif`;
-        ctx.fillStyle = anno.color;
+        
+        if (anno.bgColor && anno.bgColor !== 'transparent') {
+            ctx.fillStyle = anno.bgColor === 'white' ? '#ffffff' : (anno.bgColor === 'gray' ? '#f0f0f0' : '#000000');
+            const width = ctx.measureText(anno.text).width;
+            ctx.fillRect(anno.x * finalScale - (2*outputScale), anno.y * finalScale - (2*outputScale), width + (4*outputScale), (anno.fontSize * finalScale) + (4*outputScale));
+        }
+        
+        ctx.fillStyle = (anno.bgColor === 'black' && anno.color === '#000000') ? '#ffffff' : anno.color;
         ctx.textBaseline = 'top'; // Para alinear con el left/top del HTML
         // Ajuste empírico vertical para coincidir con cómo el navegador renderiza el div vs el fillText
         ctx.fillText(anno.text, anno.x * finalScale, (anno.y * finalScale) + (2 * outputScale)); 

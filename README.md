@@ -25,8 +25,9 @@ Built for Windows with **Tauri (Rust + JS)**, InkIt opens your heaviest PDFs in 
 - **🚀 Instant Cold Start:** Opens faster than a standard web browser tab. No splash screens.
 - **🛡️ Provable Privacy (100% Offline):** Zero cloud APIs. Your sensitive legal contracts never leave your hard drive.
 - **🖋️ Fluid Canvas Signing & Bault:** Smooth, hardware-accelerated signature drawing. Save your frequent signatures to use them with one click.
-- **🔤 Typewriter & Quick Stamps:** Click anywhere to type text. Instantly drop checkmarks (✓, ✗) or the current Date.
-- **🎓 Digital Visual Stamps:** Generate professional-looking visual stamps (including your Name, Email/Role, and Timestamp) directly in the app.
+- **🔤 Typewriter & Quick Stamps:** Click anywhere to type text (with customizable background colors). Instantly drop checkmarks (✓, ✗) or the current Date.
+- **🖍️ Freehand Highlighter:** Mark up your documents with a fluid, multi-color overlay highlighter that saves directly into the PDF.
+- **🎓 Stamps & Digital Identities:** We split signatures into two vaults. Save your drawn/imported stamps, and generate professional-looking "Digital Identities" (including Name, Email, and Role) directly in the app.
 - **🎨 Dark Mode & Customization:** Force dark mode on bright PDFs to protect your eyes, and toggle high-quality rendering.
 - **🖨️ Export & Print:** Print directly from the app (without annoying browser headers) or export pages as PNGs.
 - **🌍 Dual Language:** Fully translated into English and Spanish.
