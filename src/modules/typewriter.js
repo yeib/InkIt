@@ -75,10 +75,29 @@ export function initTypewriter(containerId) {
     const sizeInput = document.getElementById('tw-size');
     const colorBtns = toolbar.querySelectorAll('.color-btn');
     const stampBtns = toolbar.querySelectorAll('.stamp-btn');
-    const bgSelect = document.getElementById('tw-bg-color');
+    const bgBtn = document.getElementById('tw-bg-color');
+    const bgValues = ['transparent', 'white', 'gray', 'black'];
+    const bgKeys = ['tw.bg.transparent', 'tw.bg.white', 'tw.bg.gray', 'tw.bg.black'];
 
-    bgSelect.addEventListener('change', (e) => {
-        currentBgColor = e.target.value;
+    bgBtn.addEventListener('click', () => {
+        let currentIndex = bgValues.indexOf(currentBgColor);
+        currentIndex = (currentIndex + 1) % bgValues.length;
+        currentBgColor = bgValues[currentIndex];
+        bgBtn.dataset.value = currentBgColor;
+        bgBtn.dataset.i18n = bgKeys[currentIndex];
+        
+        // Tratar de obtener la traducción actual
+        import('./translations.js').then(m => {
+            const lang = document.documentElement.lang || 'en';
+            bgBtn.innerText = m.translations[lang][bgKeys[currentIndex]] || bgKeys[currentIndex];
+        });
+        
+        // Estilo visual del botón para indicar que está activo
+        if (currentBgColor !== 'transparent') {
+            bgBtn.classList.add('primary');
+        } else {
+            bgBtn.classList.remove('primary');
+        }
     });
     
     // Toggle Typewriter Mode
