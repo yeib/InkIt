@@ -109,12 +109,7 @@
         </div>
         <div class="divider"></div>
         <div class="tool-group">
-          <select id="tw-bg-color" class="glass-select" style="padding: 2px; font-size: 12px; border-radius: 4px; background: rgba(255,255,255,0.8);">
-            <option value="transparent" data-i18n="tw.bg.transparent">Transparent BG</option>
-            <option value="white" data-i18n="tw.bg.white">White BG</option>
-            <option value="gray" data-i18n="tw.bg.gray">Gray BG</option>
-            <option value="black" data-i18n="tw.bg.black">Black BG</option>
-          </select>
+          <button class="btn-glass" id="tw-bg-color" data-value="transparent" data-i18n="tw.bg.transparent">Transparent BG</button>
         </div>
         <div class="divider"></div>
         <div class="tool-group">
@@ -184,7 +179,8 @@
         <p style="margin: 0; font-size: 14px; opacity: 0.8;" data-i18n="modal.stamp.desc">Enter your details to generate a professional visual stamp.</p>
         <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
           <input type="text" id="stamp-input-name" autocomplete="off" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name (e.g. Yeib)" style="width: 100%; box-sizing: border-box;" />
-          <input type="text" id="stamp-input-detail" autocomplete="off" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail, Role or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-detail" autocomplete="off" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail (Optional)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-extra" autocomplete="off" class="glass-input" data-i18n="modal.stamp.extra" placeholder="Role, Company or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
         </div>
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
           <button class="btn-glass" id="btn-cancel-stamp" data-i18n="modal.btn.cancel">Cancel</button>
