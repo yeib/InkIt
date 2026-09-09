@@ -1,12 +1,69 @@
+import { addImageAnnotationToPage } from './signatures.js';
+
 export let annotations = [];
 
 let isTypewriterMode = false;
 let currentFontSize = 16;
 let currentColor = '#000000';
-let currentStamp = null;
 let activeAnnotation = null;
+let pendingStampType = null;
+let pendingStampSymbol = null;
 
 let pdfContainer = null;
+
+// Generar imagen transparente SVG/Canvas para sellos (✓, ✗, etc.)
+function createStampDataUrl(symbol, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 120;
+    canvas.height = 120;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = 'bold 80px sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(symbol, 60, 65);
+    
+    return canvas.toDataURL('image/png');
+}
+
+export function setActiveAnnotation(div) {
+    if (activeAnnotation && activeAnnotation !== div) {
+        activeAnnotation.classList.remove('selected');
+    }
+    activeAnnotation = div;
+    if (div) {
+        div.classList.add('selected');
+        const sizeInput = document.getElementById('tw-size');
+        const anno = annotations.find(a => a.id === div.dataset.id);
+        if (anno && sizeInput) {
+            sizeInput.value = anno.fontSize;
+        }
+    }
+}
+
+export function clearActiveAnnotation() {
+    if (activeAnnotation) {
+        activeAnnotation.classList.remove('selected');
+        activeAnnotation.classList.remove('editing');
+        activeAnnotation = null;
+    }
+}
+
+export function updateAnnotationsMode(mode) {
+    // mode: 'pointer' | 'typewriter' | 'sign'
+    const textEls = document.querySelectorAll('.text-annotation');
+    textEls.forEach(el => {
+        if (mode === 'typewriter') {
+            el.contentEditable = 'true';
+            el.style.cursor = 'text';
+        } else {
+            el.contentEditable = 'false';
+            el.style.cursor = 'move';
+        }
+    });
+}
 
 export function initTypewriter(containerId) {
     pdfContainer = document.getElementById(containerId);
@@ -16,15 +73,14 @@ export function initTypewriter(containerId) {
     const sizeInput = document.getElementById('tw-size');
     const colorBtns = document.querySelectorAll('.color-btn');
     const stampBtns = document.querySelectorAll('.stamp-btn');
-    const btnStampDate = document.getElementById('btn-stamp-date');
     
     // Toggle Typewriter Mode
     btnTypewriter.addEventListener('click', () => {
         if (!isTypewriterMode) {
             isTypewriterMode = true;
-            currentStamp = null; // Limpiar modo sello
             toolbar.style.display = 'flex';
             pdfContainer.style.cursor = 'text';
+            updateAnnotationsMode('typewriter');
         } else {
             window.disableTypewriter();
         }
@@ -34,11 +90,14 @@ export function initTypewriter(containerId) {
         isTypewriterMode = false;
         toolbar.style.display = 'none';
         pdfContainer.style.cursor = 'default';
-        currentStamp = null;
+        clearActiveAnnotation();
+        updateAnnotationsMode('pointer');
+        pendingStampType = null;
+        pendingStampSymbol = null;
     };
 
     // Control de tamaño
-    sizeInput.addEventListener('change', (e) => {
+    sizeInput.addEventListener('input', (e) => {
         currentFontSize = parseInt(e.target.value) || 16;
         if (activeAnnotation) {
             const anno = annotations.find(a => a.id === activeAnnotation.dataset.id);
@@ -68,74 +127,89 @@ export function initTypewriter(containerId) {
         });
     });
 
-    // Sellos Rápidos
+    // Sellos Rápidos: Ticks y Cruces se insertan como IMAGEN PNG para evitar problemas de WinAnsi y permitir mover/eliminar
     stampBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            if (e.target.dataset.stamp) {
-                currentStamp = e.target.dataset.stamp;
+            const symbol = e.target.dataset.stamp;
+            if (symbol === '✓' || symbol === '✗') {
+                pendingStampType = 'symbol';
+                pendingStampSymbol = symbol;
+                pdfContainer.style.cursor = 'crosshair';
             } else if (e.target.id === 'btn-stamp-date') {
-                const today = new Date();
-                currentStamp = today.toLocaleDateString();
+                pendingStampType = 'date';
+                pendingStampSymbol = new Date().toLocaleDateString();
+                pdfContainer.style.cursor = 'crosshair';
             }
-            
-            // Forzar modo Typewriter activo pero con cursor crosshair
-            if (!isTypewriterMode) btnTypewriter.click();
-            pdfContainer.style.cursor = 'crosshair';
         });
     });
 
-    // Manejar clics en el PDF para escribir/estampar
+    // Manejar clics en el PDF para escribir o deseleccionar
     pdfContainer.addEventListener('click', (e) => {
-        if (!isTypewriterMode) return;
-        
-        // Encontrar el envoltorio de la página
         const pageWrapper = e.target.closest('.pdf-page-wrapper');
-        if (!pageWrapper) return;
         
-        // Si el usuario hace clic en una anotación existente, dejamos que el navegador maneje el focus (contenteditable)
+        // Si hay un sello pendiente y se hace clic en una página
+        if (pendingStampType && pageWrapper) {
+            const rect = pageWrapper.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const pageNum = parseInt(pageWrapper.dataset.pageNum);
+            const currentScale = parseFloat(pageWrapper.dataset.scale || 1.0);
+            const baseX = clickX / currentScale;
+            const baseY = clickY / currentScale;
+
+            if (pendingStampType === 'symbol') {
+                const stampPng = createStampDataUrl(pendingStampSymbol, currentColor);
+                addImageAnnotationToPage(stampPng, pageNum, baseX, baseY, 40);
+            } else if (pendingStampType === 'date') {
+                const newAnno = {
+                    id: Date.now().toString(),
+                    pageNum: pageNum,
+                    x: baseX,
+                    y: baseY,
+                    text: pendingStampSymbol,
+                    fontSize: currentFontSize,
+                    color: currentColor
+                };
+                annotations.push(newAnno);
+                renderAnnotation(newAnno, pageWrapper, currentScale);
+            }
+            
+            pendingStampType = null;
+            pendingStampSymbol = null;
+            pdfContainer.style.cursor = 'text'; // Volver al cursor normal de typewriter
+            return;
+        }
+
+        // Si se hace clic fuera de cualquier texto/imagen, deseleccionar
+        if (!e.target.classList.contains('text-annotation') && !e.target.classList.contains('img-annotation')) {
+            clearActiveAnnotation();
+        }
+
+        if (!isTypewriterMode || !pageWrapper) return;
+        
+        // Si el usuario hace clic en una anotación existente, dejamos que el focus/edición actúe
         if (e.target.classList.contains('text-annotation')) return;
 
         const rect = pageWrapper.getBoundingClientRect();
-        // Coordenadas relativas a la página (en los píxeles actuales del viewport)
         const clickX = e.clientX - rect.left;
         const clickY = e.clientY - rect.top;
         
-        // Determinar qué página es (necesitaremos acceder al atributo data-page)
         const pageNum = parseInt(pageWrapper.dataset.pageNum);
-        
-        // Obtener el scale actual desde un atributo del wrapper
         const currentScale = parseFloat(pageWrapper.dataset.scale || 1.0);
         
-        // Calcular valores base (scale 1.0) para guardarlos neutralmente
         const baseX = clickX / currentScale;
         const baseY = clickY / currentScale;
         const baseFontSize = currentFontSize / currentScale;
         
-        if (currentStamp) {
-            // Modo Sello: Crear inmediatamente
-            const newAnno = {
-                id: Date.now().toString(),
-                pageNum: pageNum,
-                x: baseX,
-                y: baseY,
-                text: currentStamp,
-                fontSize: baseFontSize * 1.5, // Los sellos suelen ser un poco más grandes
-                color: currentColor
-            };
-            annotations.push(newAnno);
-            currentStamp = null; // Un uso por clic
-            pdfContainer.style.cursor = 'text';
-            renderAnnotation(newAnno, pageWrapper, currentScale);
-        } else {
-            // Modo Texto: Crear caja editable temporal
-            createNewEditableBox(pageWrapper, pageNum, baseX, baseY, baseFontSize, currentColor, currentScale);
-        }
+        // Crear nueva caja editable temporal
+        createNewEditableBox(pageWrapper, pageNum, baseX, baseY, baseFontSize, currentColor, currentScale);
     });
 }
 
 function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSize, color, currentScale) {
     const div = document.createElement('div');
-    div.className = 'text-annotation editing';
+    div.className = 'text-annotation editing selected';
     div.contentEditable = true;
     
     div.style.left = (baseX * currentScale) + 'px';
@@ -145,14 +219,18 @@ function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSize, colo
     
     wrapper.appendChild(div);
     div.focus();
+    setActiveAnnotation(div);
     
     // Al perder el foco, guardar o descartar
-    div.addEventListener('blur', () => {
+    const onBlur = () => {
         div.classList.remove('editing');
         const text = div.innerText.trim();
         
+        if (div.dataset.id) return; // Ya fue guardado, el blur de setupExistingAnnotation se encargará ahora
+        
         if (text === '') {
-            wrapper.removeChild(div);
+            if (activeAnnotation === div) clearActiveAnnotation();
+            div.remove();
         } else {
             const newAnno = {
                 id: Date.now().toString(),
@@ -164,20 +242,18 @@ function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSize, colo
                 color: color
             };
             annotations.push(newAnno);
-            
-            // Asignar ID al elemento para futuras referencias
             div.dataset.id = newAnno.id;
-            
-            // Añadir listener para cuando editen una anotación ya guardada
             setupExistingAnnotation(div, newAnno, currentScale);
         }
-    });
+    };
+    div.addEventListener('blur', onBlur);
 }
 
 export function renderAnnotation(anno, wrapper, scale) {
     const div = document.createElement('div');
     div.className = 'text-annotation';
-    div.contentEditable = true;
+    div.contentEditable = isTypewriterMode;
+    div.style.cursor = isTypewriterMode ? 'text' : 'move';
     div.dataset.id = anno.id;
     
     div.style.left = (anno.x * scale) + 'px';
@@ -191,14 +267,23 @@ export function renderAnnotation(anno, wrapper, scale) {
 }
 
 function setupExistingAnnotation(div, anno, scale) {
-    div.addEventListener('focus', () => {
-        div.classList.add('editing');
-        activeAnnotation = div;
+    div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setActiveAnnotation(div);
     });
+
+    div.addEventListener('focus', () => {
+        if (isTypewriterMode) {
+            div.classList.add('editing');
+        }
+        setActiveAnnotation(div);
+    });
+
     div.addEventListener('blur', () => {
         div.classList.remove('editing');
         const text = div.innerText.trim();
         if (text === '') {
+            if (activeAnnotation === div) clearActiveAnnotation();
             div.remove();
             annotations = annotations.filter(a => a.id !== anno.id);
         } else {
@@ -206,22 +291,24 @@ function setupExistingAnnotation(div, anno, scale) {
         }
     });
 
-    // Drag & Drop
+    // Drag & Drop (Funciona siempre, especialmente en modo Seleccionar)
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
 
     div.addEventListener('mousedown', (e) => {
-        // No arrastrar si estamos editando el texto
-        if (div.classList.contains('editing') || e.button !== 0) return;
+        // En modo Texto mientras se está editando activamente, no arrastrar
+        if (isTypewriterMode && div.classList.contains('editing')) return;
+        if (e.button !== 0) return;
         
+        setActiveAnnotation(div);
+
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
         initialLeft = parseFloat(div.style.left);
         initialTop = parseFloat(div.style.top);
-        div.style.cursor = 'move';
+        div.style.cursor = 'grabbing';
         
-        // Evitar que el mousedown seleccione texto o dispare creación de nueva caja
         e.stopPropagation();
     });
 
@@ -236,9 +323,8 @@ function setupExistingAnnotation(div, anno, scale) {
     const onMouseUp = () => {
         if (isDragging) {
             isDragging = false;
-            div.style.cursor = 'text';
+            div.style.cursor = isTypewriterMode ? 'text' : 'move';
             
-            // Si hay un scale provisto, usamos ese, si no intentamos sacarlo del dataset (útil para nuevas anots)
             let currentScale = scale;
             if (!currentScale) {
                 const wrapper = div.closest('.pdf-page-wrapper');

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -23,24 +23,25 @@
               </svg>
             </button>
             <div class="glass-panel dropdown-menu" id="main-menu-dropdown" style="display: none;">
-              <button class="dropdown-item" id="menu-save-as">💾 Guardar Como (PDF)</button>
-              <button class="dropdown-item" id="menu-print">🖨️ Imprimir</button>
-              <button class="dropdown-item" id="menu-export-png">🖼️ Exportar como PNG</button>
+              <button class="dropdown-item" id="menu-save-as" data-i18n="menu.save">💾 Save As (PDF)</button>
+              <button class="dropdown-item" id="menu-print" data-i18n="menu.print">🖨️ Print</button>
+              <button class="dropdown-item" id="menu-export-png" data-i18n="menu.export">🖼️ Export as PNG</button>
               <div class="divider"></div>
-              <button class="dropdown-item" id="menu-settings">⚙️ Configuración</button>
+              <button class="dropdown-item" id="menu-settings" data-i18n="menu.settings">⚙️ Settings</button>
+              <button class="dropdown-item" id="menu-about" data-i18n="menu.about">ℹ️ About</button>
             </div>
           </div>
           <span class="app-title" data-tauri-drag-region style="display: flex; align-items: baseline;">
             🖋️ InkIt 
-            <a href="https://yeib.cl" target="_blank" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
+            <a href="https://yeib.cl" target="_blank" data-i18n="app.by" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
           </span>
         </div>
         <div class="toolbar-center" data-tauri-drag-region>
-          <button class="btn-glass" id="btn-open-pdf">Abrir PDF</button>
+          <button class="btn-glass" id="btn-open-pdf" data-i18n="btn.open">Open PDF</button>
           <div class="divider" style="margin: 0 8px;"></div>
-          <button class="btn-glass primary" id="btn-pointer">🖱️ Seleccionar</button>
-          <button class="btn-glass" id="btn-typewriter">🔤 Texto</button>
-          <button class="btn-glass" id="btn-sign">🖋️ Firmar</button>
+          <button class="btn-glass primary" id="btn-pointer" data-i18n="btn.pointer">🖱️ Select</button>
+          <button class="btn-glass" id="btn-typewriter" data-i18n="btn.typewriter">🔤 Text</button>
+          <button class="btn-glass" id="btn-sign" data-i18n="btn.sign">🖋️ Sign</button>
         </div>
         <div class="toolbar-right window-controls">
           <div class="window-btn" id="titlebar-minimize">
@@ -58,11 +59,11 @@
       <!-- Sub-Toolbar: Typewriter Controls (Oculto por defecto) -->
       <div class="typewriter-toolbar glass-panel" id="typewriter-toolbar" style="display: none;">
         <div class="tool-group">
-          <label>Tamaño:</label>
+          <label data-i18n="tw.size">Size:</label>
           <input type="number" id="tw-size" value="16" min="8" max="72" class="glass-input" />
         </div>
         <div class="tool-group">
-          <label>Color:</label>
+          <label data-i18n="tw.color">Color:</label>
           <button class="color-btn active" data-color="#000000" style="background: #000000;"></button>
           <button class="color-btn" data-color="#003399" style="background: #003399;"></button>
           <button class="color-btn" data-color="#cc0000" style="background: #cc0000;"></button>
@@ -70,10 +71,10 @@
         </div>
         <div class="divider"></div>
         <div class="tool-group">
-          <span class="group-label">Sellos:</span>
+          <span class="group-label" data-i18n="tw.stamps">Stamps:</span>
           <button class="btn-glass stamp-btn" data-stamp="✓">✓</button>
           <button class="btn-glass stamp-btn" data-stamp="✗">✗</button>
-          <button class="btn-glass stamp-btn" id="btn-stamp-date">Fecha</button>
+          <button class="btn-glass stamp-btn" id="btn-stamp-date" data-i18n="stamp.date">Date</button>
         </div>
       </div>
 
@@ -83,22 +84,22 @@
         <!-- Bóveda de Firmas (Dropdown Flotante) -->
         <div class="signature-vault glass-panel" id="signature-vault" style="display: none;">
           <div class="vault-header">
-            <span>Mis Firmas</span>
+            <span data-i18n="vault.title">My Signatures</span>
             <div style="display: flex; gap: 4px;">
-              <button class="btn-glass" id="btn-new-stamp">+ Sello</button>
-              <button class="btn-glass" id="btn-new-signature">+ Dibujar</button>
+              <button class="btn-glass" id="btn-new-stamp" data-i18n="vault.new_stamp">+ Stamp</button>
+              <button class="btn-glass" id="btn-new-signature" data-i18n="vault.new_sig">+ Draw</button>
             </div>
           </div>
           <div class="vault-list" id="vault-list">
             <!-- Las firmas guardadas aparecerán aquí -->
-            <p class="empty-msg">No hay firmas guardadas.</p>
+            <p class="empty-msg" data-i18n="vault.empty">No saved signatures.</p>
           </div>
         </div>
 
         <!-- Contenedor donde renderizará PDF.js -->
         <div class="document-container" id="pdf-viewer">
           <div class="empty-state">
-            <p>Arrastra un documento PDF o haz clic en "Abrir PDF"</p>
+            <p data-i18n="pdf.empty">Drag & Drop a PDF document or click "Open PDF"</p>
           </div>
         </div>
       </main>
@@ -108,28 +109,28 @@
     <!-- Sello Digital Modal -->
     <div class="modal-overlay" id="stamp-modal" style="display: none; z-index: 9999;">
       <div class="glass-panel modal-content" style="width: 400px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-        <h3 style="margin: 0;">Crear Sello Digital</h3>
-        <p style="margin: 0; font-size: 14px; opacity: 0.8;">Ingresa tus datos para generar un sello visual profesional.</p>
+        <h3 style="margin: 0;" data-i18n="modal.stamp.title">Create Digital Stamp</h3>
+        <p style="margin: 0; font-size: 14px; opacity: 0.8;" data-i18n="modal.stamp.desc">Enter your details to generate a professional visual stamp.</p>
         <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
-          <input type="text" id="stamp-input-name" class="glass-input" placeholder="Nombre completo (Ej: Yeib)" style="width: 100%; box-sizing: border-box;" />
-          <input type="text" id="stamp-input-detail" class="glass-input" placeholder="E-mail, Cargo o ID (Opcional)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-name" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name (e.g. Yeib)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-detail" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail, Role or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
         </div>
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
-          <button class="btn-glass" id="btn-cancel-stamp">Cancelar</button>
-          <button class="btn-glass primary" id="btn-generate-stamp">Generar Sello</button>
+          <button class="btn-glass" id="btn-cancel-stamp" data-i18n="modal.btn.cancel">Cancel</button>
+          <button class="btn-glass primary" id="btn-generate-stamp" data-i18n="modal.btn.generate">Generate Stamp</button>
         </div>
       </div>
     </div>
 
     <div class="modal-overlay" id="signature-modal" style="display: none; z-index: 9999;">
       <div class="modal-content glass-panel">
-        <h3>Dibuja tu firma</h3>
+        <h3 data-i18n="modal.sig.title">Draw your signature</h3>
         <canvas id="signature-canvas" width="500" height="250"></canvas>
         <div class="modal-actions">
-          <button class="btn-glass" id="btn-sig-import">Importar</button>
-          <button class="btn-glass" id="btn-sig-clear">Limpiar</button>
-          <button class="btn-glass" id="btn-sig-cancel">Cancelar</button>
-          <button class="btn-glass primary" id="btn-sig-save">Guardar</button>
+          <button class="btn-glass" id="btn-sig-import" data-i18n="modal.btn.import">Import</button>
+          <button class="btn-glass" id="btn-sig-clear" data-i18n="modal.btn.clear">Clear</button>
+          <button class="btn-glass" id="btn-sig-cancel" data-i18n="modal.btn.cancel">Cancel</button>
+          <button class="btn-glass primary" id="btn-sig-save" data-i18n="modal.btn.save">Save</button>
         </div>
       </div>
     </div>
@@ -137,36 +138,64 @@
     <!-- Modal para Configuración -->
     <div class="modal-overlay" id="settings-modal" style="display: none; z-index: 9999;">
       <div class="modal-content glass-panel" style="min-width: 400px;">
-        <h3>⚙️ Configuración de InkIt</h3>
+        <h3 data-i18n="settings.title">⚙️ InkIt Settings</h3>
         <div class="settings-group" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; text-align: left;">
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span data-i18n="settings.lang">Language (Idioma)</span>
+            <select id="setting-language" class="glass-input" style="width: auto; padding: 4px 8px; background: rgba(0,0,0,0.5);">
+              <option value="en">English</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
+
           <label style="display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="setting-high-quality" checked class="glass-checkbox">
-            Renderizado de alta calidad (más lento)
+            <span data-i18n="settings.high_quality">High quality rendering (slower)</span>
           </label>
           <label style="display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="setting-dark-mode" checked class="glass-checkbox">
-            Forzar PDF a tema oscuro (Invertir colores)
+            <span data-i18n="settings.dark_mode">Force Dark Mode PDF (Invert colors)</span>
           </label>
           <label style="display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="setting-auto-flatten" checked class="glass-checkbox">
-            Aplanar firmas y anotaciones al guardar por defecto
+            <span data-i18n="settings.auto_flatten">Merge signatures permanently on save</span>
           </label>
           <div class="divider" style="margin: 8px 0;"></div>
-          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">InkIt v1.0.0 - <a href="https://yeib.cl" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">Yeib Ecosystem</a></p>
+          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+            <span id="app-version-display">InkIt v?.?.?</span> - <a href="https://yeib.cl" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">Yeib</a>
+          </p>
         </div>
         <div class="modal-actions" style="margin-top: 24px;">
-          <button class="btn-glass primary" id="btn-settings-close">Cerrar</button>
+          <button class="btn-glass primary" id="btn-settings-close" data-i18n="modal.btn.close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Acerca De (About) -->
+    <div class="modal-overlay" id="about-modal" style="display: none; z-index: 9999;">
+      <div class="modal-content glass-panel" style="min-width: 350px; text-align: center;">
+        <h3 data-i18n="about.title">ℹ️ About InkIt</h3>
+        <img src="/InkIt_Logo.png" alt="InkIt Logo" style="width: 80px; height: 80px; margin: 16px auto; display: block;" />
+        <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin: 16px 0;">
+          <p><strong><span data-i18n="about.version">Version:</span></strong> <span id="about-app-version">v?.?.?</span></p>
+          <p><strong><span data-i18n="about.contact">Contact:</span></strong> <a href="mailto:yeib@pm.me" style="color: var(--accent-cyan); text-decoration: none;">yeib@pm.me</a></p>
+          <p><strong><span data-i18n="about.portfolio">Portfolio:</span></strong> <a href="https://yeib.cl" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">yeib.cl</a></p>
+          <p><strong><span data-i18n="about.github">GitHub:</span></strong> <a href="https://github.com/Yeib/InkIt" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">Yeib/InkIt</a></p>
+        </div>
+        <div class="modal-actions" style="margin-top: 16px;">
+          <button class="btn-glass primary" id="btn-about-close" data-i18n="modal.btn.close">Close</button>
         </div>
       </div>
     </div>
 
     <!-- Menú Contextual Personalizado para Firmas -->
     <div id="sig-context-menu" class="glass-panel" style="display: none; position: absolute; z-index: 10000; flex-direction: column; padding: 4px; gap: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-      <button class="dropdown-item" id="sig-ctx-s">Tamaño Pequeño (S)</button>
-      <button class="dropdown-item" id="sig-ctx-m">Tamaño Mediano (M)</button>
-      <button class="dropdown-item" id="sig-ctx-l">Tamaño Grande (L)</button>
+      <button class="dropdown-item" id="sig-ctx-s" data-i18n="ctx.size.s">Small Size (S)</button>
+      <button class="dropdown-item" id="sig-ctx-m" data-i18n="ctx.size.m">Medium Size (M)</button>
+      <button class="dropdown-item" id="sig-ctx-l" data-i18n="ctx.size.l">Large Size (L)</button>
       <div class="divider" style="margin: 4px 0; background: rgba(255,255,255,0.1);"></div>
-      <button class="dropdown-item" id="sig-ctx-delete" style="color: #ff6b6b;">❌ Eliminar Firma</button>
+      <button class="dropdown-item" id="sig-ctx-delete" data-i18n="ctx.delete" style="color: #ff6b6b;">❌ Delete Signature</button>
     </div>
     
     <script type="module" src="/src/main.js"></script>

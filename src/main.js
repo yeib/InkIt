@@ -3,10 +3,47 @@ console.log("InkIt Inicializado: Yeib Ecosystem");
 
 import { invoke } from '@tauri-apps/api/core';
 import { open, save, message } from '@tauri-apps/plugin-dialog';
+import { getVersion } from '@tauri-apps/api/app';
+import { applyTranslations, setLang, getLang, t } from './modules/translations.js';
+import * as pdfjsLib from 'pdfjs-dist';
+import { PDFDocument } from 'pdf-lib';
+import { initSignatures, imageAnnotations, renderImageAnnotationsForPage } from './modules/signatures.js';
+import { initTypewriter, renderAnnotationsForPage, annotations, updateAnnotationsMode } from './modules/typewriter.js';
+import { initPdfViewer, loadDocument } from "./core/pdfViewer.js";
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { initPdfViewer, loadDocument } from './core/pdfViewer.js';
-import { initTypewriter } from './modules/typewriter.js';
-import { initSignatures } from './modules/signatures.js';
+
+// Setup language early
+const langSelect = document.getElementById('setting-language');
+langSelect.value = getLang();
+applyTranslations();
+
+langSelect.addEventListener('change', (e) => {
+    setLang(e.target.value);
+});
+
+// Setup Version
+async function setupVersion() {
+    try {
+        const version = await getVersion();
+        document.getElementById('app-version-display').innerText = `InkIt v${version}`;
+        document.getElementById('about-app-version').innerText = `v${version}`;
+    } catch (e) {
+        console.error("No se pudo obtener la versión de Tauri:", e);
+    }
+}
+setupVersion();
+
+// Setup About Modal
+const aboutModal = document.getElementById('about-modal');
+document.getElementById('menu-about').addEventListener('click', () => {
+    document.getElementById('main-menu-dropdown').style.display = 'none';
+    aboutModal.style.display = 'flex';
+});
+document.getElementById('btn-about-close').addEventListener('click', () => {
+    aboutModal.style.display = 'none';
+});
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.mjs';
 
 let currentPdfPath = null;
 
@@ -65,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('menu-save-as')?.addEventListener('click', async () => {
             mainMenuDropdown.style.display = 'none';
             if (!currentPdfPath) {
-                await message('Abre un PDF primero antes de guardar.', { title: 'InkIt', kind: 'warning' });
+                await message(t('alert.open_first'), { title: 'InkIt', kind: 'warning' });
                 return;
             }
 
@@ -136,11 +173,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Usamos Rust para guardar y evitar problemas de permisos de fs en frontend
                     await invoke('save_file', { path: targetPath, contents: Array.from(pdfBytesFinal) });
                     
-                    await message('PDF Aplanado guardado exitosamente!', { title: 'InkIt', kind: 'info' });
+                    await message(t('alert.saved'), { title: 'InkIt', kind: 'info' });
                 }
             } catch (error) {
                 console.error('Error guardando PDF:', error);
-                await message('Error al guardar: ' + error, { title: 'Error', kind: 'error' });
+                await message(t('alert.error_save') + error, { title: t('alert.title.error'), kind: 'error' });
             }
         });
 
@@ -152,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('menu-export-png')?.addEventListener('click', async () => {
             mainMenuDropdown.style.display = 'none';
             if (!currentPdfPath) {
-                await message('Abre un PDF primero para poder exportar.', { title: 'Atención', kind: 'warning' });
+                await message(t('alert.open_first_export'), { title: t('alert.title.attention'), kind: 'warning' });
                 return;
             }
 
@@ -176,12 +213,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     // Usamos Rust para guardar y evitar permisos
                     await invoke('save_file', { path: targetPath, contents: Array.from(bytes) });
-                    
-                    await message('Página exportada con éxito como PNG.', { title: 'InkIt', kind: 'info' });
+                    await message(t('alert.exported'), { title: 'InkIt', kind: 'info' });
                 }
             } catch (error) {
-                console.error('Error exportando PNG:', error);
-                await message('Error al exportar: ' + error.message, { title: 'Error', kind: 'error' });
+                console.error('Error exportando:', error);
+                await message(t('alert.error_export') + error.message, { title: t('alert.title.error'), kind: 'error' });
             }
         });
 
@@ -250,6 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateToolButtons('btn-pointer');
             if (window.disableTypewriter) window.disableTypewriter();
             if (window.disableSignatures) window.disableSignatures();
+            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
         });
     }
 
@@ -257,6 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnTypewriter.addEventListener('click', () => {
             updateToolButtons('btn-typewriter');
             if (window.disableSignatures) window.disableSignatures();
+            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('typewriter'));
         });
     }
 
@@ -264,6 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSign.addEventListener('click', () => {
             updateToolButtons('btn-sign');
             if (window.disableTypewriter) window.disableTypewriter();
+            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
         });
     }
 
@@ -294,9 +333,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const uint8Array = new Uint8Array(pdfBytes);
                 await loadDocument(uint8Array);
             }
-        } catch (error) {
-            console.error("Error en flujo de apertura:", error);
-            await message('Hubo un error al abrir el documento.', { title: 'Error', kind: 'error' });
+        } catch (e) {
+            console.error(e);
+            await message(t('alert.error_open'), { title: t('alert.title.error'), kind: 'error' });
         }
     });
 });
