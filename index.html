@@ -30,7 +30,10 @@
               <button class="dropdown-item" id="menu-settings">⚙️ Configuración</button>
             </div>
           </div>
-          <span class="app-title" data-tauri-drag-region>🖋️ InkIt</span>
+          <span class="app-title" data-tauri-drag-region style="display: flex; align-items: baseline;">
+            🖋️ InkIt 
+            <a href="https://yeib.cl" target="_blank" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
+          </span>
         </div>
         <div class="toolbar-center" data-tauri-drag-region>
           <button class="btn-glass" id="btn-open-pdf">Abrir PDF</button>
@@ -103,13 +106,13 @@
 
     <!-- Modal para Dibujar Firma -->
     <!-- Sello Digital Modal -->
-    <div class="modal-overlay" id="stamp-modal" style="display: none;">
+    <div class="modal-overlay" id="stamp-modal" style="display: none; z-index: 9999;">
       <div class="glass-panel modal-content" style="width: 400px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
         <h3 style="margin: 0;">Crear Sello Digital</h3>
         <p style="margin: 0; font-size: 14px; opacity: 0.8;">Ingresa tus datos para generar un sello visual profesional.</p>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <input type="text" id="stamp-input-name" class="glass-input" placeholder="Nombre completo (Ej: Yeib)" />
-          <input type="text" id="stamp-input-detail" class="glass-input" placeholder="E-mail, Cargo o ID (Opcional)" />
+        <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
+          <input type="text" id="stamp-input-name" class="glass-input" placeholder="Nombre completo (Ej: Yeib)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="stamp-input-detail" class="glass-input" placeholder="E-mail, Cargo o ID (Opcional)" style="width: 100%; box-sizing: border-box;" />
         </div>
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
           <button class="btn-glass" id="btn-cancel-stamp">Cancelar</button>
@@ -118,7 +121,7 @@
       </div>
     </div>
 
-    <div class="modal-overlay" id="signature-modal" style="display: none;">
+    <div class="modal-overlay" id="signature-modal" style="display: none; z-index: 9999;">
       <div class="modal-content glass-panel">
         <h3>Dibuja tu firma</h3>
         <canvas id="signature-canvas" width="500" height="250"></canvas>
@@ -129,8 +132,10 @@
           <button class="btn-glass primary" id="btn-sig-save">Guardar</button>
         </div>
       </div>
+    </div>
+
     <!-- Modal para Configuración -->
-    <div class="modal-overlay" id="settings-modal" style="display: none;">
+    <div class="modal-overlay" id="settings-modal" style="display: none; z-index: 9999;">
       <div class="modal-content glass-panel" style="min-width: 400px;">
         <h3>⚙️ Configuración de InkIt</h3>
         <div class="settings-group" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; text-align: left;">
@@ -147,12 +152,21 @@
             Aplanar firmas y anotaciones al guardar por defecto
           </label>
           <div class="divider" style="margin: 8px 0;"></div>
-          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">InkIt v1.0.0 - Yeib Ecosystem</p>
+          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">InkIt v1.0.0 - <a href="https://yeib.cl" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">Yeib Ecosystem</a></p>
         </div>
         <div class="modal-actions" style="margin-top: 24px;">
           <button class="btn-glass primary" id="btn-settings-close">Cerrar</button>
         </div>
       </div>
+    </div>
+
+    <!-- Menú Contextual Personalizado para Firmas -->
+    <div id="sig-context-menu" class="glass-panel" style="display: none; position: absolute; z-index: 10000; flex-direction: column; padding: 4px; gap: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+      <button class="dropdown-item" id="sig-ctx-s">Tamaño Pequeño (S)</button>
+      <button class="dropdown-item" id="sig-ctx-m">Tamaño Mediano (M)</button>
+      <button class="dropdown-item" id="sig-ctx-l">Tamaño Grande (L)</button>
+      <div class="divider" style="margin: 4px 0; background: rgba(255,255,255,0.1);"></div>
+      <button class="dropdown-item" id="sig-ctx-delete" style="color: #ff6b6b;">❌ Eliminar Firma</button>
     </div>
     
     <script type="module" src="/src/main.js"></script>

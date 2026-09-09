@@ -3,7 +3,9 @@ export let imageAnnotations = [];
 let isStampingMode = false;
 let selectedSignatureBase64 = null;
 let pdfContainer = null;
-
+let ctxMenuActiveAnno = null;
+let ctxMenuActiveImg = null;
+let ctxMenuActiveScale = 1.0;
 // Funciones de Dibujo (Signature Pad)
 let isDrawing = false;
 let canvas, ctx;
@@ -67,9 +69,10 @@ export function initSignatures(containerId) {
         
         // Crear un canvas temporal para dibujar el sello
         const stampCanvas = document.createElement('canvas');
-        stampCanvas.width = 350;
-        stampCanvas.height = 100;
+        stampCanvas.width = 700;
+        stampCanvas.height = 200;
         const sCtx = stampCanvas.getContext('2d');
+        sCtx.scale(2, 2);
         
         // Fondo y borde
         sCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -203,25 +206,86 @@ export function initSignatures(containerId) {
         const baseX = clickX / currentScale;
         const baseY = clickY / currentScale;
         
-        const newImgAnno = {
-            id: 'sig_' + Date.now(),
-            pageNum: pageNum,
-            x: baseX,
-            y: baseY,
-            width: 150, // Ancho base de la firma
-            height: 75,
-            dataUrl: selectedSignatureBase64
+        const currentSigBase64 = selectedSignatureBase64;
+        
+        const img = new Image();
+        img.onload = () => {
+            const ratio = img.width / img.height;
+            const isStamp = ratio > 3; 
+            const baseWidth = isStamp ? 300 : 150; // Sello más grande, firma normal pequeña
+            
+            const newImgAnno = {
+                id: 'sig_' + Date.now(),
+                pageNum: pageNum,
+                x: baseX,
+                y: baseY,
+                width: baseWidth,
+                height: baseWidth / ratio,
+                originalRatio: ratio,
+                dataUrl: currentSigBase64
+            };
+            
+            imageAnnotations.push(newImgAnno);
+            renderImageAnnotation(newImgAnno, pageWrapper, currentScale);
         };
+        img.src = currentSigBase64;
         
-        imageAnnotations.push(newImgAnno);
-        renderImageAnnotation(newImgAnno, pageWrapper, currentScale);
-        
-        // Apagar modo estampado después de un uso (o mantenerlo, según UX. Aquí lo apagamos para evitar múltiples accidentales)
+        // Apagar modo estampado después de un uso
         isStampingMode = false;
         selectedSignatureBase64 = null;
         pdfContainer.style.cursor = 'default';
         btnSign.classList.remove('primary'); // Reset color if it was highlighted
     });
+    // Setup Context Menu for Signatures
+    const sigCtxMenu = document.getElementById('sig-context-menu');
+    
+    document.addEventListener('click', (e) => {
+        if (sigCtxMenu && sigCtxMenu.style.display === 'flex' && !sigCtxMenu.contains(e.target)) {
+            sigCtxMenu.style.display = 'none';
+        }
+    });
+
+    document.getElementById('sig-ctx-delete')?.addEventListener('click', () => {
+        if (ctxMenuActiveImg && ctxMenuActiveAnno) {
+            ctxMenuActiveImg.remove();
+            imageAnnotations = imageAnnotations.filter(a => a.id !== ctxMenuActiveAnno.id);
+            sigCtxMenu.style.display = 'none';
+        }
+    });
+    
+    const applySize = (sizeType) => {
+        if (ctxMenuActiveImg && ctxMenuActiveAnno) {
+            // Usamos originalRatio para que no se deforme al pasar de L a M
+            const ratio = ctxMenuActiveAnno.originalRatio || (ctxMenuActiveAnno.width / ctxMenuActiveAnno.height);
+            const isStamp = ratio > 3; 
+            const baseW = isStamp ? 300 : 150;
+            const baseH = baseW / ratio;
+            
+            let newW, newH;
+            if (sizeType === 'S') {
+                newW = baseW * 0.6;
+                newH = baseH * 0.6;
+            } else if (sizeType === 'M') {
+                newW = baseW;
+                newH = baseH;
+            } else if (sizeType === 'L') {
+                newW = baseW * 1.6; // Ajustado para que quepa en un A4 sin verse tan deforme
+                newH = baseH; // Altura normal de M (se deforma intencionalmente)
+            }
+            
+            ctxMenuActiveAnno.width = newW;
+            ctxMenuActiveAnno.height = newH;
+            
+            ctxMenuActiveImg.style.width = (newW * ctxMenuActiveScale) + 'px';
+            ctxMenuActiveImg.style.height = (newH * ctxMenuActiveScale) + 'px';
+            
+            sigCtxMenu.style.display = 'none';
+        }
+    };
+    
+    document.getElementById('sig-ctx-s')?.addEventListener('click', () => applySize('S'));
+    document.getElementById('sig-ctx-m')?.addEventListener('click', () => applySize('M'));
+    document.getElementById('sig-ctx-l')?.addEventListener('click', () => applySize('L'));
 }
 
 function setupCanvasDrawing() {
@@ -390,6 +454,7 @@ export function renderImageAnnotation(anno, wrapper, scale) {
     img.src = anno.dataUrl;
     img.className = 'img-annotation';
     img.dataset.id = anno.id;
+    img.title = 'Clic derecho para cambiar tamaño o eliminar.';
     
     img.style.left = (anno.x * scale) + 'px';
     img.style.top = (anno.y * scale) + 'px';
@@ -404,6 +469,7 @@ export function renderImageAnnotation(anno, wrapper, scale) {
 
     img.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return; // Only left click
+        
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
@@ -435,12 +501,32 @@ export function renderImageAnnotation(anno, wrapper, scale) {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 
-    // Permitir borrarla con doble clic
-    img.addEventListener('dblclick', () => {
-        img.remove();
-        imageAnnotations = imageAnnotations.filter(a => a.id !== anno.id);
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+    // Context Menu (Right Click)
+    img.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        ctxMenuActiveAnno = anno;
+        ctxMenuActiveImg = img;
+        ctxMenuActiveScale = scale;
+        
+        const sigCtxMenu = document.getElementById('sig-context-menu');
+        sigCtxMenu.style.display = 'flex';
+        
+        // Evitar que el menú se salga de la pantalla
+        const rect = sigCtxMenu.getBoundingClientRect();
+        let top = e.clientY;
+        let left = e.clientX;
+        
+        if (top + rect.height > window.innerHeight) {
+            top -= rect.height; // abrir hacia arriba
+        }
+        if (left + rect.width > window.innerWidth) {
+            left -= rect.width; // abrir hacia la izquierda
+        }
+        
+        sigCtxMenu.style.left = left + 'px';
+        sigCtxMenu.style.top = top + 'px';
     });
 }
 

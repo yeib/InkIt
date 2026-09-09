@@ -36,6 +36,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('titlebar-close')?.addEventListener('click', () => appWindow.close());
 
+    // Bloquear menú contextual de Edge (clic derecho) para que se sienta nativo
+    document.addEventListener('contextmenu', e => {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !e.target.isContentEditable) {
+            e.preventDefault();
+        }
+    });
+
     // Configurar Hamburger Menu
     const btnMainMenu = document.getElementById('btn-main-menu');
     const mainMenuDropdown = document.getElementById('main-menu-dropdown');
