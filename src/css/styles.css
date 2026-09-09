@@ -1,0 +1,194 @@
+:root {
+  /* Dark Glassmorphism / Yeib Ecosystem Variables */
+  --bg-color: #0A0A0A; /* Negro carbón */
+  --text-color: #FAFAFA;
+  --accent-cyan: #00E5FF; /* Tinta cyan brillante */
+  --accent-hover: #00B8D4;
+  
+  --glass-bg: rgba(25, 25, 25, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  
+  --font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  --transition-smooth: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden; /* No scroll en el body principal, gestionado internamente */
+  user-select: none; /* Prevenir selección por defecto, excepto en inputs */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base Glass Container */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 12px;
+}
+
+/* Botones genéricos */
+.glass-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Dark Mode PDF Invert */
+.dark-pdf-mode .pdf-page-wrapper canvas {
+  filter: invert(0.9) hue-rotate(180deg) brightness(0.9) contrast(1.1);
+}
+
+.dark-pdf-mode .pdf-page-wrapper {
+  background-color: #1a1a1a !important;
+}
+
+@media print {
+  .toolbar, .typewriter-toolbar, .signature-vault {
+    display: none !important;
+  }
+  .pdf-page-wrapper {
+    box-shadow: none !important;
+    margin: 0 !important;
+    page-break-after: always;
+  }
+  .workspace {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-glass.primary {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.3);
+  color: var(--accent-cyan);
+}
+
+.btn-glass.primary:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+}
+
+/* Workspace layout */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+header.toolbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  justify-content: space-between;
+}
+
+main.workspace {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  justify-content: center;
+  align-items: center;
+}
+
+.document-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px;
+}
+
+.app-title { font-weight: bold; font-size: 1.1rem; } 
+.empty-state { text-align: center; color: rgba(255,255,255,0.4); margin-top: 20%; }
+.empty-state { text-align: center; color: rgba(255,255,255,0.4); margin-top: 20%; }
+
+/* Window Controls */
+.window-controls { display: flex; height: 100%; align-items: center; gap: 8px; }
+.window-btn { width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 6px; cursor: pointer; color: rgba(255,255,255,0.7); transition: var(--transition-smooth); }
+.window-btn svg { width: 10px; height: 10px; }
+.window-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.close-btn:hover { background: rgba(255, 60, 60, 0.8); }
+
+/* Menu Dropdown */
+.menu-dropdown-container { position: relative; display: flex; align-items: center; }
+.btn-icon { background: transparent; border: none; color: var(--text-color); cursor: pointer; border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center; transition: var(--transition-smooth); }
+.btn-icon:hover { background: rgba(255,255,255,0.1); }
+.dropdown-menu { position: absolute; top: 100%; left: 0; margin-top: 8px; padding: 8px; display: flex; flex-direction: column; min-width: 200px; z-index: 200; border: 1px solid var(--glass-border); background: rgba(20,20,20,0.9); box-shadow: var(--glass-shadow); }
+.dropdown-item { background: transparent; border: none; color: var(--text-color); text-align: left; padding: 10px 12px; cursor: pointer; border-radius: 6px; transition: var(--transition-smooth); font-family: var(--font-family); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+.dropdown-item:hover { background: rgba(255,255,255,0.1); color: var(--accent-cyan); }
+.dropdown-menu .divider { height: 1px; background: var(--glass-border); margin: 6px 0; }
+
+/* Custom Checkbox */
+.glass-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-smooth);
+}
+.glass-checkbox:checked {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: var(--accent-cyan);
+}
+.glass-checkbox:checked::after {
+  content: '✓';
+  color: var(--accent-cyan);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+}

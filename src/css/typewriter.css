@@ -1,0 +1,90 @@
+/* Typewriter Toolbar */
+.typewriter-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  gap: 16px;
+  background: rgba(15, 15, 15, 0.85);
+  border-radius: 0 0 12px 12px;
+  border-top: none;
+  width: fit-content;
+  margin: 0 auto;
+  position: absolute;
+  top: 56px; /* Altura del toolbar principal */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 60px;
+  outline: none;
+}
+
+.color-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.color-btn.active {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: var(--glass-border);
+}
+
+.stamp-btn {
+  padding: 4px 12px;
+  font-weight: bold;
+}
+
+/* Text Annotations */
+.pdf-page-wrapper {
+  position: relative; /* Esencial para posicionar anotaciones */
+}
+
+.text-annotation {
+  position: absolute;
+  background: transparent;
+  border: 1px dashed transparent;
+  padding: 2px 4px;
+  cursor: text;
+  outline: none;
+  min-width: 10px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.2;
+  font-family: 'Inter', 'Outfit', sans-serif;
+  transform-origin: top left;
+}
+
+.text-annotation:focus, .text-annotation:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.text-annotation:focus {
+  cursor: text;
+}

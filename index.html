@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InkIt</title>
+    <!-- Importar CSS Base -->
+    <link rel="icon" type="image/png" href="/InkIt_Logo.png" />
+    <link rel="stylesheet" href="/src/css/styles.css" />
+    <link rel="stylesheet" href="/src/css/typewriter.css" />
+    <link rel="stylesheet" href="/src/css/signatures.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Toolbar (Header) -->
+      <header class="toolbar glass-panel">
+        <div class="toolbar-left" data-tauri-drag-region style="flex-grow: 1; display: flex; align-items: center; height: 100%; gap: 12px;">
+          <!-- Menú Hamburguesa -->
+          <div class="menu-dropdown-container">
+            <button class="btn-icon" id="btn-main-menu" title="Menú Principal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <path d="M3 12h18M3 6h18M3 18h18" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="glass-panel dropdown-menu" id="main-menu-dropdown" style="display: none;">
+              <button class="dropdown-item" id="menu-save-as">💾 Guardar Como (PDF)</button>
+              <button class="dropdown-item" id="menu-print">🖨️ Imprimir</button>
+              <button class="dropdown-item" id="menu-export-png">🖼️ Exportar como PNG</button>
+              <div class="divider"></div>
+              <button class="dropdown-item" id="menu-settings">⚙️ Configuración</button>
+            </div>
+          </div>
+          <span class="app-title" data-tauri-drag-region>🖋️ InkIt</span>
+        </div>
+        <div class="toolbar-center">
+          <button class="btn-glass" id="btn-open-pdf">Abrir PDF</button>
+          <button class="btn-glass" id="btn-typewriter">Typewriter</button>
+          <button class="btn-glass primary" id="btn-sign">Firmar</button>
+        </div>
+        <div class="toolbar-right window-controls">
+          <div class="window-btn" id="titlebar-minimize">
+            <svg viewBox="0 0 10 10"><path d="M 0,5 10,5" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <div class="window-btn" id="titlebar-maximize">
+            <svg viewBox="0 0 10 10"><path d="M 0,0 0,10 10,10 10,0 Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <div class="window-btn close-btn" id="titlebar-close">
+            <svg viewBox="0 0 10 10"><path d="M 0,0 10,10 M 10,0 0,10" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+        </div>
+      </header>
+
+      <!-- Sub-Toolbar: Typewriter Controls (Oculto por defecto) -->
+      <div class="typewriter-toolbar glass-panel" id="typewriter-toolbar" style="display: none;">
+        <div class="tool-group">
+          <label>Tamaño:</label>
+          <input type="number" id="tw-size" value="16" min="8" max="72" class="glass-input" />
+        </div>
+        <div class="tool-group">
+          <label>Color:</label>
+          <button class="color-btn active" data-color="#000000" style="background: #000000;"></button>
+          <button class="color-btn" data-color="#003399" style="background: #003399;"></button>
+        </div>
+        <div class="divider"></div>
+        <div class="tool-group">
+          <span class="group-label">Sellos:</span>
+          <button class="btn-glass stamp-btn" data-stamp="✓">✓</button>
+          <button class="btn-glass stamp-btn" data-stamp="✗">✗</button>
+          <button class="btn-glass stamp-btn" id="btn-stamp-date">Fecha</button>
+        </div>
+      </div>
+
+      <!-- Workspace Principal -->
+      <main class="workspace">
+        
+        <!-- Bóveda de Firmas (Dropdown Flotante) -->
+        <div class="signature-vault glass-panel" id="signature-vault" style="display: none;">
+          <div class="vault-header">
+            <span>Mis Firmas</span>
+            <button class="btn-glass" id="btn-new-signature">+ Nueva</button>
+          </div>
+          <div class="vault-list" id="vault-list">
+            <!-- Las firmas guardadas aparecerán aquí -->
+            <p class="empty-msg">No hay firmas guardadas.</p>
+          </div>
+        </div>
+
+        <!-- Contenedor donde renderizará PDF.js -->
+        <div class="document-container" id="pdf-viewer">
+          <div class="empty-state">
+            <p>Arrastra un documento PDF o haz clic en "Abrir PDF"</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para Dibujar Firma -->
+    <div class="modal-overlay" id="signature-modal" style="display: none;">
+      <div class="modal-content glass-panel">
+        <h3>Dibuja tu firma</h3>
+        <canvas id="signature-canvas" width="500" height="250"></canvas>
+        <div class="modal-actions">
+          <button class="btn-glass" id="btn-sig-import">Importar</button>
+          <button class="btn-glass" id="btn-sig-clear">Limpiar</button>
+          <button class="btn-glass" id="btn-sig-cancel">Cancelar</button>
+          <button class="btn-glass primary" id="btn-sig-save">Guardar</button>
+        </div>
+      </div>
+    <!-- Modal para Configuración -->
+    <div class="modal-overlay" id="settings-modal" style="display: none;">
+      <div class="modal-content glass-panel" style="min-width: 400px;">
+        <h3>⚙️ Configuración de InkIt</h3>
+        <div class="settings-group" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; text-align: left;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="setting-high-quality" checked class="glass-checkbox">
+            Renderizado de alta calidad (más lento)
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="setting-dark-mode" checked class="glass-checkbox">
+            Forzar PDF a tema oscuro (Invertir colores)
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="setting-auto-flatten" checked class="glass-checkbox">
+            Aplanar (flatten) firmas al guardar por defecto
+          </label>
+          <div class="divider" style="margin: 8px 0;"></div>
+          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">InkIt v1.0.0 - Yeib Ecosystem</p>
+        </div>
+        <div class="modal-actions" style="margin-top: 24px;">
+          <button class="btn-glass primary" id="btn-settings-close">Cerrar</button>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

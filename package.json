@@ -1,0 +1,28 @@
+{
+  "name": "inkit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "author": "Yeib",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "msix": "node scripts/build-msix.js",
+    "msix:bump": "node scripts/build-msix.js --bump",
+    "tauri:windows:build": "tauri-windows-bundle build"
+  },
+  "devDependencies": {
+    "@choochmeque/tauri-windows-bundle": "^0.1.29",
+    "@tauri-apps/cli": "^2.11.4",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tauri-apps/plugin-fs": "^2.5.2",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289"
+  }
+}

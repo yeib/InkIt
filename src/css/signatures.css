@@ -1,0 +1,105 @@
+/* Signature Vault */
+.signature-vault {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 280px;
+  background: rgba(15, 15, 15, 0.9);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.vault-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
+.vault-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.empty-msg {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.signature-item {
+  background: rgba(255, 255, 255, 0.9); /* Fondo claro para que la firma negra/azul contraste */
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+}
+
+.signature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.3);
+}
+
+.signature-item img {
+  width: 100%;
+  height: 60px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: rgba(20, 20, 20, 0.95);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+#signature-canvas {
+  background: white;
+  border-radius: 8px;
+  cursor: crosshair;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+/* Image Annotations (Placed Signatures) */
+.img-annotation {
+  position: absolute;
+  cursor: move;
+  transform-origin: top left;
+  border: 1px dashed transparent;
+}
+
+.img-annotation:hover, .img-annotation.selected {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.05);
+}
