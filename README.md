@@ -42,7 +42,7 @@ Currently, InkIt is built as a hybrid application to maximize UI fluidity and ra
 > **🚧 Beta (v0.9) Notice & v1.0 Rust Roadmap:** 
 > This repository is currently in a **Beta (v0.9)** stage. To quickly iterate on the fluid UI and solve the complex coordinate mapping between the drawing Canvas and the PDF, the initial binary flattening is handled via JavaScript (`pdf-lib`). 
 > 
-> **The official goal for v1.0** is to migrate all PDF stream parsing and binary flattening directly to the native **Rust backend** (using crates like `lopdf` or `pdf-writer`), including exploring PKCS#7 cryptographic digital signatures via `.p12` certificates. This will dramatically improve performance on massive documents, reduce frontend RAM usage, and fully leverage Rust's memory safety. We shipped UX first, but native Rust performance is the ultimate destination.
+> **The official goal for v1.0** is to migrate all PDF stream parsing and binary flattening directly to the native **Rust backend** (using crates like `lopdf` or `pdf-writer`), including exploring PKCS#7 cryptographic digital signatures via `.p12` certificates. Furthermore, v1.0 will implement native OS launch argument parsing (`std::env::args`) and single-instance management (`tauri-plugin-single-instance`), ensuring smooth handling of Windows "Open with..." and default file associations. This will dramatically improve performance on massive documents, reduce frontend RAM usage, and fully leverage Rust's memory safety. We shipped UX first, but native Rust performance is the ultimate destination.
 
 ## 🚀 Getting Started
 
