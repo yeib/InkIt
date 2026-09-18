@@ -97,7 +97,7 @@ try {
   const manifestTemplate = path.join(rootDir, 'src-tauri', 'gen', 'windows', 'AppxManifest.xml.template');
   if (!fs.existsSync(manifestTemplate)) {
     console.log(`⚙️ Inicializando plantillas MSIX (tauri-windows-bundle init)...`);
-    execSync('npx tauri-windows-bundle init', { stdio: 'inherit', cwd: rootDir });
+    execSync('node node_modules/@choochmeque/tauri-windows-bundle/dist/cli.js init', { stdio: 'inherit', cwd: rootDir });
   }
 
   // 3.6 Inyectar credenciales oficiales de Microsoft Store en bundle.config.json
@@ -118,7 +118,7 @@ try {
 
   // 4. Generar paquete MSIX usando @choochmeque/tauri-windows-bundle
   console.log(`⚡ Empaquetando paquete MSIX oficial con tauri-windows-bundle...`);
-  execSync('npx tauri-windows-bundle build --runner npm --regenerate-assets', { stdio: 'inherit', cwd: rootDir });
+  execSync('node node_modules/@choochmeque/tauri-windows-bundle/dist/cli.js build --runner npm --regenerate-assets', { stdio: 'inherit', cwd: rootDir });
 
   // Verificación de integridad de assets
   const wideLogoPath = path.join(genAssetsDir, 'Wide310x150Logo.png');

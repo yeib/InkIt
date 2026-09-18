@@ -6,7 +6,6 @@ import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
 import { applyTranslations, setLang, getLang, t } from './modules/translations.js';
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument, rgb } from 'pdf-lib';
 import { initSignatures, imageAnnotations, renderImageAnnotationsForPage } from './modules/signatures.js';
 import { initHighlights, highlightAnnotations } from "./modules/highlights.js";
 import { initTypewriter, renderAnnotationsForPage, annotations, updateAnnotationsMode } from './modules/typewriter.js';
@@ -122,65 +121,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     };
 
+    const revertToPointer = () => {
+        updateToolButtons('btn-pointer');
+        if (window.disableTypewriter) window.disableTypewriter();
+        if (window.disableSignatures) window.disableSignatures();
+        if (window.disableHighlights) window.disableHighlights();
+        import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+    };
+
     if (btnPointer) {
         btnPointer.addEventListener('click', () => {
-            updateToolButtons('btn-pointer');
-            if (window.disableTypewriter) window.disableTypewriter();
-            if (window.disableSignatures) window.disableSignatures();
-            if (window.disableHighlights) window.disableHighlights();
-            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+            revertToPointer();
         });
     }
 
     if (btnTypewriter) {
         btnTypewriter.addEventListener('click', () => {
+            if (btnTypewriter.classList.contains('primary')) {
+                revertToPointer();
+                return;
+            }
             updateToolButtons('btn-typewriter');
             if (window.disableSignatures) window.disableSignatures();
             if (window.disableHighlights) window.disableHighlights();
+            if (window.enableTypewriter) window.enableTypewriter();
             import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('typewriter'));
         });
     }
 
     if (btnHighlight) {
         btnHighlight.addEventListener('click', () => {
+            if (btnHighlight.classList.contains('primary')) {
+                revertToPointer();
+                return;
+            }
             updateToolButtons('btn-highlight');
             if (window.disableTypewriter) window.disableTypewriter();
             if (window.disableSignatures) window.disableSignatures();
-            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
             if (window.enableHighlights) window.enableHighlights();
+            import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
         });
     }
 
     if (btnStamp) {
         btnStamp.addEventListener('click', () => {
-            // Allow deselecting the active tool button
             if (btnStamp.classList.contains('primary')) {
-                updateToolButtons('btn-pointer');
-                if (window.disableSignatures) window.disableSignatures();
-                import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+                revertToPointer();
                 return;
             }
             updateToolButtons('btn-stamp');
             if (window.disableTypewriter) window.disableTypewriter();
             if (window.disableHighlights) window.disableHighlights();
+            if (window.enableStampVault) window.enableStampVault();
             import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
-            // Note: btnStamp listener in signatures.js will open the vault
         });
     }
     
     if (btnEsign) {
         btnEsign.addEventListener('click', () => {
             if (btnEsign.classList.contains('primary')) {
-                updateToolButtons('btn-pointer');
-                if (window.disableSignatures) window.disableSignatures();
-                import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
+                revertToPointer();
                 return;
             }
             updateToolButtons('btn-esign');
             if (window.disableTypewriter) window.disableTypewriter();
             if (window.disableHighlights) window.disableHighlights();
+            if (window.enableEsignVault) window.enableEsignVault();
             import('./modules/typewriter.js').then(m => m.updateAnnotationsMode('pointer'));
-            // Note: btnEsign listener in signatures.js will open the vault
         });
     }
 
@@ -196,8 +203,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Inicialización de componentes UI
     const btnOpenPdf = document.getElementById('btn-open-pdf');
+    const btnClosePdf = document.getElementById('menu-close-pdf');
     
     btnOpenPdf.addEventListener('click', async () => {
+        const mainMenuDropdown = document.getElementById('main-menu-dropdown');
+        if (mainMenuDropdown) mainMenuDropdown.style.display = 'none';
+        
         try {
             const selectedPath = await open({
                 multiple: false,
@@ -207,6 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (selectedPath) {
                 console.log("Archivo seleccionado:", selectedPath);
                 currentPdfPath = selectedPath;
+                if (btnClosePdf) btnClosePdf.style.display = 'block';
                 
                 const pdfBytes = await invoke('read_pdf', { path: selectedPath });
                 const uint8Array = new Uint8Array(pdfBytes);
@@ -218,9 +230,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    if (btnClosePdf) {
+        btnClosePdf.addEventListener('click', async () => {
+            const mainMenuDropdown = document.getElementById('main-menu-dropdown');
+            if (mainMenuDropdown) mainMenuDropdown.style.display = 'none';
+            
+            const { isDirty, setDirty } = await import('./modules/state.js');
+            if (isDirty) {
+                const { confirm } = await import('@tauri-apps/plugin-dialog');
+                const wantsToClose = await confirm('Hay cambios sin guardar. ¿Seguro que deseas cerrar el documento y perder los cambios?', { title: 'InkIt - Cerrar Documento', kind: 'warning' });
+                if (!wantsToClose) return;
+            }
+            
+            const { closeDocument } = await import('./core/pdfViewer.js');
+            await closeDocument();
+            currentPdfPath = null;
+            btnClosePdf.style.display = 'none';
+            setDirty(false);
+        });
+    }
+
     const { setupDragAndDrop } = await import('./ui/windowControls.js');
     setupDragAndDrop(appWindow, async (path, uint8Array) => {
         currentPdfPath = path;
+        if (btnClosePdf) btnClosePdf.style.display = 'block';
         await loadDocument(uint8Array);
     });
+
+    // Check if the app was opened with a PDF file (e.g., "Open with..." in Windows)
+    try {
+        const initialPath = await invoke('get_initial_pdf');
+        if (initialPath) {
+            console.log("Archivo inicial detectado:", initialPath);
+            currentPdfPath = initialPath;
+            if (btnClosePdf) btnClosePdf.style.display = 'block';
+            const pdfBytes = await invoke('read_pdf', { path: initialPath });
+            const uint8Array = new Uint8Array(pdfBytes);
+            await loadDocument(uint8Array);
+        }
+    } catch (e) {
+        console.error("Error al cargar PDF inicial:", e);
+    }
 });

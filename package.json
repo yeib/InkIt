@@ -1,6 +1,6 @@
 {
   "name": "inkit",
-  "version": "0.9.0",
+  "version": "0.9.5",
   "private": true,
   "type": "module",
   "author": "Yeib",
@@ -22,7 +22,6 @@
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-fs": "^2.5.2",
-    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289"
   }
 }

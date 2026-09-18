@@ -123,6 +123,7 @@
   border: 1px dashed transparent;
   -webkit-user-drag: none;
   user-select: none;
+  z-index: 10;
 }
 
 .img-annotation:hover, .img-annotation.selected {

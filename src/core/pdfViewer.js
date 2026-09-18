@@ -230,3 +230,32 @@ export async function exportCurrentPageAsPng() {
     const dataUrl = tempCanvas.toDataURL('image/png');
     return dataUrl.replace(/^data:image\/png;base64,/, "");
 }
+
+export async function closeDocument() {
+    if (!currentPdf) return;
+    
+    // Reset internal state
+    currentPdf = null;
+    currentPdfBytes = null;
+    currentScale = 1.2;
+    
+    // Clear DOM
+    container.innerHTML = `
+      <div class="empty-state">
+        <p data-i18n="pdf.empty">Drag & Drop a PDF document or click "Open PDF"</p>
+      </div>
+    `;
+    
+    import('../modules/translations.js').then(m => m.applyTranslations());
+    
+    // Clear annotations in state
+    const { setAnnotations } = await import('../modules/typewriter.js');
+    const { setImageAnnotations } = await import('../modules/signatures.js');
+    const { setHighlightAnnotations } = await import('../modules/highlights.js');
+    const { globalHistory } = await import('../modules/history.js');
+    
+    setAnnotations([]);
+    setImageAnnotations([]);
+    setHighlightAnnotations([]);
+    globalHistory.clear();
+}
