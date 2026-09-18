@@ -52,6 +52,8 @@
               </svg>
             </button>
             <div class="glass-panel dropdown-menu" id="main-menu-dropdown" style="display: none;">
+              <button class="dropdown-item" id="btn-open-pdf" data-i18n="btn.open">📂 Open PDF</button>
+              <button class="dropdown-item" id="menu-close-pdf" data-i18n="menu.close_pdf" style="color: #ff6b6b; display: none;">❌ Close PDF</button>
               <button class="dropdown-item" id="menu-save-as" data-i18n="menu.save">💾 Save As (PDF)</button>
               <button class="dropdown-item" id="menu-print" data-i18n="menu.print">🖨️ Print</button>
               <button class="dropdown-item" id="menu-export-png" data-i18n="menu.export">🖼️ Export as PNG</button>
@@ -72,8 +74,6 @@
           <button class="btn-icon" id="btn-redo" title="Rehacer (Ctrl+Y)" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M21 10H11a5 5 0 0 0-5 5v2a5 5 0 0 0 5 5h4M21 10l-5 5M21 10l-5-5"/></svg>
           </button>
-          <div class="divider" style="margin: 0 8px;"></div>
-          <button class="btn-glass" id="btn-open-pdf" data-i18n="btn.open">Open PDF</button>
           <div class="divider" style="margin: 0 8px;"></div>
           <button class="btn-glass primary" id="btn-pointer" data-i18n="btn.pointer">🖱️ Select</button>
           <button class="btn-glass" id="btn-typewriter" data-i18n="btn.typewriter">🔤 Text</button>
@@ -128,6 +128,9 @@
           <button class="color-btn" data-color="rgba(0, 255, 0, 0.4)" style="background: rgba(0, 255, 0, 0.4);"></button>
           <button class="color-btn" data-color="rgba(0, 255, 255, 0.4)" style="background: rgba(0, 255, 255, 0.4);"></button>
           <button class="color-btn" data-color="rgba(255, 0, 255, 0.4)" style="background: rgba(255, 0, 255, 0.4);"></button>
+          <div class="divider" style="margin: 0 8px;"></div>
+          <button class="color-btn" data-color="rgba(0, 0, 0, 1.0)" style="background: rgba(0, 0, 0, 1.0);" title="Solid Black"></button>
+          <button class="color-btn" data-color="rgba(255, 255, 255, 1.0)" style="background: rgba(255, 255, 255, 1.0); border: 1px solid #666;" title="Solid White"></button>
         </div>
       </div>
 

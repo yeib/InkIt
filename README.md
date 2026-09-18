@@ -39,10 +39,10 @@ Currently, InkIt is built as a hybrid application to maximize UI fluidity and ra
 - **Frontend (UI & Rendering):** Vanilla JS + ES6 Modules. Uses `pdf.js` for fast document rendering and `pdf-lib` for binary manipulation.
 - **Backend (Native Shell):** Rust 🦀 + Tauri v2. Handles the native Windows bindings, secure file system operations (`std::fs`), and OS dialogs.
 
-> **🚧 Beta (v0.9) Notice & v1.0 Rust Roadmap:** 
-> This repository is currently in a **Beta (v0.9)** stage. To quickly iterate on the fluid UI and solve the complex coordinate mapping between the drawing Canvas and the PDF, the initial binary flattening is handled via JavaScript (`pdf-lib`). 
+> **🚀 v0.9.5 (Native Rust Engine) Notice & v1.0 Roadmap:** 
+> This repository has successfully migrated all PDF stream parsing, injection, and visual flattening directly to the native **Rust backend** (using `lopdf`). We have officially removed the frontend JavaScript manipulation (`pdf-lib`), drastically reducing RAM usage and ensuring flawless coordinate mapping. The app also natively handles Windows "Open with..." file associations perfectly.
 > 
-> **The official goal for v1.0** is to migrate all PDF stream parsing and binary flattening directly to the native **Rust backend** (using crates like `lopdf` or `pdf-writer`), including exploring PKCS#7 cryptographic digital signatures via `.p12` certificates. Furthermore, v1.0 will implement native OS launch argument parsing (`std::env::args`) and single-instance management (`tauri-plugin-single-instance`), ensuring smooth handling of Windows "Open with..." and default file associations. This will dramatically improve performance on massive documents, reduce frontend RAM usage, and fully leverage Rust's memory safety. We shipped UX first, but native Rust performance is the ultimate destination.
+> **The official goal for v1.0** is to introduce **Cryptographic Digital Signatures (PKCS#7/CMS)** with `.pfx/.p12` certificates and document locking (DocMDP), alongside a new **Multi-Document Architecture** (handling multiple PDFs in a modern side-bubble interface). We've built the native foundations, now we are preparing for the ultimate enterprise features.
 
 ## 🚀 Getting Started
 
