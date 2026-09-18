@@ -37,6 +37,10 @@ export function restoreGlobalState(state) {
     });
 }
 
+export let isDirty = false;
+export function setDirty(val) { isDirty = val; }
+
 export function commitAction() {
+    isDirty = true;
     globalHistory.pushState(getGlobalState());
 }

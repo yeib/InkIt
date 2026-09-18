@@ -78,6 +78,7 @@
   line-height: 1.2;
   font-family: 'Inter', 'Outfit', sans-serif;
   transform-origin: top left;
+  z-index: 10;
 }
 
 .text-annotation:focus, .text-annotation:hover {

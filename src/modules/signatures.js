@@ -61,21 +61,17 @@ export function initSignatures(containerId) {
         localStorage.removeItem('inkit_signatures');
     }
 
-    btnStamp?.addEventListener('click', () => {
+    window.enableStampVault = () => {
         if(esignVault) esignVault.style.display = 'none';
-        const isVisible = stampVault.style.display === 'flex';
-        stampVault.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) renderVaults();
-        else window.disableSignatures();
-    });
+        if(stampVault) stampVault.style.display = 'flex';
+        renderVaults();
+    };
 
-    btnEsign?.addEventListener('click', () => {
+    window.enableEsignVault = () => {
         if(stampVault) stampVault.style.display = 'none';
-        const isVisible = esignVault.style.display === 'flex';
-        esignVault.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) renderVaults();
-        else window.disableSignatures();
-    });
+        if(esignVault) esignVault.style.display = 'flex';
+        renderVaults();
+    };
 
     window.disableSignatures = () => {
         state.isStampingMode = false;

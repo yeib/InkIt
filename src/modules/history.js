@@ -25,6 +25,12 @@ export class HistoryManager {
         this._notify();
     }
 
+    clear() {
+        this.undoStack = [];
+        this.redoStack = [];
+        this._notify();
+    }
+
     undo(currentState) {
         if (this.undoStack.length === 0) return null;
         
