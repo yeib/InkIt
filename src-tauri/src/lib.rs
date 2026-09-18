@@ -11,12 +11,27 @@ fn save_file(path: String, contents: Vec<u8>) -> Result<(), String> {
     std::fs::write(&path, contents).map_err(|e| format!("Error guardando archivo: {}", e))
 }
 
+#[tauri::command]
+fn get_initial_pdf() -> Option<String> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 && args[1].to_lowercase().ends_with(".pdf") {
+        Some(args[1].clone())
+    } else {
+        None
+    }
+}
+
+#[tauri::command]
+fn flatten_pdf(recipe: pdf_engine::FlattenRecipe) -> Result<(), String> {
+    pdf_engine::process_flatten(recipe)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
-    .invoke_handler(tauri::generate_handler![read_pdf, save_file])
+    .invoke_handler(tauri::generate_handler![read_pdf, save_file, get_initial_pdf, flatten_pdf])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

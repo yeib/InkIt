@@ -121,8 +121,11 @@ function drawPath(ctx, points, color, scale) {
     ctx.lineWidth = 15 * scale;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Use multiply blend mode if possible, but globalAlpha is easier for standard canvases
-    ctx.globalCompositeOperation = 'multiply';
+    
+    // Determine blend mode based on opacity
+    const isSolid = color.includes(', 1.0)') || color.includes(', 1)');
+    ctx.globalCompositeOperation = isSolid ? 'source-over' : 'multiply';
+    
     ctx.stroke();
     ctx.globalCompositeOperation = 'source-over'; // reset
 }

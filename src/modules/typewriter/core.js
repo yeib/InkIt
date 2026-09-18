@@ -99,20 +99,15 @@ export function initTypewriter(containerId) {
         }
     });
     
-    btnTypewriter?.addEventListener('click', () => {
-        if (!state.isTypewriterMode) {
-            state.isTypewriterMode = true; 
-            state.currentColor = '#000000'; 
-            colorBtns.forEach(b => b.classList.remove('active')); 
-            if(colorBtns[0]) colorBtns[0].classList.add('active');
-            
-            if(toolbar) toolbar.style.display = 'flex';
-            if(state.pdfContainer) state.pdfContainer.style.cursor = 'text';
-            updateAnnotationsMode('typewriter');
-        } else {
-            if(window.disableTypewriter) window.disableTypewriter();
-        }
-    });
+    window.enableTypewriter = () => {
+        state.isTypewriterMode = true; 
+        state.currentColor = '#000000'; 
+        colorBtns.forEach(b => b.classList.remove('active')); 
+        if(colorBtns[0]) colorBtns[0].classList.add('active');
+        
+        if(toolbar) toolbar.style.display = 'flex';
+        if(state.pdfContainer) state.pdfContainer.style.cursor = 'text';
+    };
 
     window.disableTypewriter = () => {
         state.isTypewriterMode = false;

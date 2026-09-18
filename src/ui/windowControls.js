@@ -23,8 +23,32 @@ export function setupWindowControls(appWindow) {
     
     appWindow.onResized(updateMaxIcon);
 
-    document.getElementById('titlebar-close')?.addEventListener('click', () => appWindow.close());
+    const handleClose = async () => {
+        const { isDirty } = await import('../modules/state.js');
+        if (isDirty) {
+            const { confirm } = await import('@tauri-apps/plugin-dialog');
+            const wantsToClose = await confirm('Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?', { title: 'InkIt', kind: 'warning' });
+            if (wantsToClose) {
+                appWindow.destroy();
+            }
+        } else {
+            appWindow.close();
+        }
+    };
 
+    document.getElementById('titlebar-close')?.addEventListener('click', handleClose);
+
+    appWindow.onCloseRequested(async (event) => {
+        const { isDirty } = await import('../modules/state.js');
+        if (isDirty) {
+            event.preventDefault();
+            const { confirm } = await import('@tauri-apps/plugin-dialog');
+            const wantsToClose = await confirm('Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?', { title: 'InkIt', kind: 'warning' });
+            if (wantsToClose) {
+                appWindow.destroy();
+            }
+        }
+    });
     // Bloquear menú contextual de Edge (clic derecho) para que se sienta nativo
     document.addEventListener('contextmenu', e => {
         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !e.target.isContentEditable) {
