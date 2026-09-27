@@ -1,6 +1,6 @@
 [package]
 name = "inkit"
-version = "0.9.5"
+version = "1.0.0"
 description = "InkIt - Yeib Ecosystem"
 authors = ["Yeib"]
 license = ""
@@ -25,9 +25,13 @@ tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
-lopdf = "0.33.0"
+lopdf = "0.34"
 image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
 flate2 = "1.0"
 anyhow = "1.0"
+time = "0.3"
+
+
+openssl = "0.10"
 

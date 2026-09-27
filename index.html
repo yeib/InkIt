@@ -62,12 +62,15 @@
               <button class="dropdown-item" id="menu-about" data-i18n="menu.about">ℹ️ About</button>
             </div>
           </div>
-          <span class="app-title" data-tauri-drag-region style="display: flex; align-items: baseline;">
-            🖋️ InkIt 
+          <span class="app-title" data-tauri-drag-region style="display: flex; align-items: center;">
+            <img src="/InkIt_Logo.png" style="width: 14px; height: 14px; margin-right: 6px; border-radius: 2px;" alt="Logo" /> InkIt 
             <a href="https://yeib.cl" target="_blank" data-i18n="app.by" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
+            <button id="btn-quick-save" class="btn-glass" style="display: none; margin-left: 12px; background: rgba(46, 204, 113, 0.2); border: 1px solid rgba(46, 204, 113, 0.5); color: #2ecc71; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+              💾 <span data-i18n="btn.save_changes">Guardar</span>
+            </button>
           </span>
         </div>
-        <div class="toolbar-center" data-tauri-drag-region style="display: flex; gap: 4px; align-items: center;">
+        <div class="toolbar-center" data-tauri-drag-region style="display: flex; gap: 4px; align-items: center; margin-right: 64px;">
           <button class="btn-icon" id="btn-undo" title="Deshacer (Ctrl+Z)" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M3 10h10a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5H9M3 10l5 5M3 10l5-5"/></svg>
           </button>
@@ -262,11 +265,13 @@
     <div id="sig-context-menu" class="glass-panel" style="display: none; position: absolute; z-index: 10000; flex-direction: column; padding: 4px; gap: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
       <button class="dropdown-item" id="sig-ctx-s" data-i18n="ctx.size.s">Small Size (S)</button>
       <button class="dropdown-item" id="sig-ctx-m" data-i18n="ctx.size.m">Medium Size (M)</button>
-      <button class="dropdown-item" id="sig-ctx-l" data-i18n="ctx.size.l">Large Size (L)</button>
+      <button class="dropdown-item" id="sig-ctx-l" data-i18n="ctx.size.l">Pie de página (Full Width)</button>
       <div class="divider" style="margin: 4px 0; background: rgba(255,255,255,0.1);"></div>
-      <button class="dropdown-item" id="sig-ctx-delete" data-i18n="ctx.delete" style="color: #ff6b6b;">❌ Delete Signature</button>
+      <button class="dropdown-item" id="sig-ctx-all-pages" style="color: #61dafb;">📄 En todas las hojas</button>
+      <button class="dropdown-item" id="sig-ctx-delete" data-i18n="ctx.delete" style="color: #ff6b6b;">🗑️ Eliminar Firma</button>
     </div>
     
     <script type="module" src="/src/main.js"></script>
+    <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;"></div>
   </body>
 </html>

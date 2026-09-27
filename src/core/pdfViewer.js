@@ -13,6 +13,10 @@ let currentScale = 1.2;
 let container = null;
 let currentPdfBytes = null; // Guardar para re-renderizar al hacer zoom
 
+export function getTotalPages() {
+    return currentPdf ? currentPdf.numPages : 1;
+}
+
 export async function initPdfViewer(containerElementId) {
     container = document.getElementById(containerElementId);
     if (!container) throw new Error("Contenedor del PDF no encontrado");
@@ -257,5 +261,6 @@ export async function closeDocument() {
     setAnnotations([]);
     setImageAnnotations([]);
     setHighlightAnnotations([]);
-    globalHistory.clear();
+    const { getGlobalState } = await import("../modules/state.js");
+    globalHistory.clear(getGlobalState());
 }

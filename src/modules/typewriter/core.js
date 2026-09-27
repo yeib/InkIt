@@ -42,7 +42,8 @@ export function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSiz
         div.classList.remove('editing');
         const text = div.innerText.trim();
         
-        if (div.dataset.id) return; 
+        if (div.dataset.id) return;
+        if (!document.body.contains(div)) return; 
         
         if (text === '') {
             if (state.activeAnnotation === div) clearActiveAnnotation();

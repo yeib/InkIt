@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "InkIt",
-  "version": "0.9.5",
+  "version": "1.0.0",
   "identifier": "Yeib.InkIt",
   "build": {
     "frontendDist": "../dist",
@@ -47,6 +47,11 @@
         "description": "InkIt PDF Document",
         "role": "Viewer"
       }
-    ]
+    ],
+    "windows": {
+      "wix": {
+        "language": ["es-ES", "en-US"]
+      }
+    }
   }
 }

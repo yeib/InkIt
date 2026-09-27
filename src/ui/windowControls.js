@@ -24,10 +24,9 @@ export function setupWindowControls(appWindow) {
     appWindow.onResized(updateMaxIcon);
 
     const handleClose = async () => {
-        const { isDirty } = await import('../modules/state.js');
+        const { isDirty } = await import("../modules/state.js");
         if (isDirty) {
-            const { confirm } = await import('@tauri-apps/plugin-dialog');
-            const wantsToClose = await confirm('Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?', { title: 'InkIt', kind: 'warning' });
+            const wantsToClose = await showCustomConfirm();
             if (wantsToClose) {
                 appWindow.destroy();
             }
@@ -36,24 +35,74 @@ export function setupWindowControls(appWindow) {
         }
     };
 
-    document.getElementById('titlebar-close')?.addEventListener('click', handleClose);
+    document.getElementById("titlebar-close")?.addEventListener("click", handleClose);
 
     appWindow.onCloseRequested(async (event) => {
-        const { isDirty } = await import('../modules/state.js');
+        const { isDirty } = await import("../modules/state.js");
         if (isDirty) {
             event.preventDefault();
-            const { confirm } = await import('@tauri-apps/plugin-dialog');
-            const wantsToClose = await confirm('Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?', { title: 'InkIt', kind: 'warning' });
+            const wantsToClose = await showCustomConfirm();
             if (wantsToClose) {
                 appWindow.destroy();
             }
         }
     });
-    // Bloquear menú contextual de Edge (clic derecho) para que se sienta nativo
-    document.addEventListener('contextmenu', e => {
-        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !e.target.isContentEditable) {
+    // Bloquear men contextual de Edge (clic derecho) para que se sienta nativo
+    document.addEventListener("contextmenu", e => {
+        if (e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && !e.target.isContentEditable) {
             e.preventDefault();
         }
+    });
+
+    // Bloquear F5 y Ctrl+R para evitar reinicio accidental de la app
+    document.addEventListener("keydown", e => {
+        if (e.key === "F5" || (e.ctrlKey && (e.key === "r" || e.key === "R")) || (e.metaKey && (e.key === "r" || e.key === "R"))) {
+            e.preventDefault();
+        }
+    });
+}
+
+function showCustomConfirm() {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "modal-overlay";
+        overlay.style.display = "flex";
+        overlay.style.zIndex = "99999";
+
+        const content = document.createElement("div");
+        content.className = "modal-content glass-panel";
+        content.style.minWidth = "350px";
+        content.style.textAlign = "center";
+
+        const isEn = document.documentElement.lang === "en" || document.documentElement.lang === "en-US";
+        const title = isEn ? "⚠️ Unsaved Changes" : "⚠️ Cambios sin guardar";
+        const msg = isEn 
+            ? "You have unsaved changes. Are you sure you want to exit and lose them?" 
+            : "Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?";
+        const btnCancelText = isEn ? "Cancel" : "Cancelar";
+        const btnQuitText = isEn ? "Exit without saving" : "Salir sin guardar";
+
+        content.innerHTML = `
+            <h3>${title}</h3>
+            <p style="margin: 16px 0; color: rgba(255,255,255,0.8); font-size: 14px;">${msg}</p>
+            <div class="modal-actions" style="margin-top: 24px; justify-content: space-around;">
+                <button class="btn-glass" id="btn-custom-cancel">${btnCancelText}</button>
+                <button class="btn-glass primary" id="btn-custom-quit" style="background: rgba(255, 107, 107, 0.2); border: 1px solid rgba(255, 107, 107, 0.5); color: #ff6b6b;">${btnQuitText}</button>
+            </div>
+        `;
+
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+
+        document.getElementById("btn-custom-cancel").onclick = () => {
+            overlay.remove();
+            resolve(false);
+        };
+        
+        document.getElementById("btn-custom-quit").onclick = () => {
+            overlay.remove();
+            resolve(true);
+        };
     });
 }
 

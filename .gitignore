@@ -31,3 +31,11 @@ plans/
 
 GEMINI.md
 lab/
+
+store-assets/
+
+
+# MSIX y Bundles Windows
+*.msix
+*.appx
+src-tauri/gen/windows/out/
