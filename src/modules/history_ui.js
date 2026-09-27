@@ -11,12 +11,18 @@ export function initHistoryUI() {
     });
 
     const doUndo = () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         if (btnUndo.disabled) return;
         const prevState = globalHistory.undo();
         if (prevState) restoreGlobalState(prevState);
     };
 
     const doRedo = () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         if (btnRedo.disabled) return;
         const nextState = globalHistory.redo();
         if (nextState) restoreGlobalState(nextState);

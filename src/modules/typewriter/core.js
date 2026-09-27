@@ -67,6 +67,9 @@ export function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSiz
         }
     };
     div.addEventListener('blur', onBlur);
+    div.addEventListener('input', () => {
+        import('../state.js').then(m => m.setDirty(true));
+    });
 }
 
 export function initTypewriter(containerId) {

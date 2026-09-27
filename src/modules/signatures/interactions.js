@@ -14,6 +14,7 @@ export function renderImageAnnotation(anno, wrapper, scale) {
     img.style.width = (anno.width * scale) + 'px';
     img.style.height = (anno.height * scale) + 'px';
     
+    img.style.opacity = anno.opacity || 1.0;
     wrapper.appendChild(img);
     
     // Drag & Drop logic
@@ -66,6 +67,8 @@ export function renderImageAnnotation(anno, wrapper, scale) {
         const sigCtxMenu = document.getElementById('sig-context-menu');
         if(sigCtxMenu) {
             sigCtxMenu.style.display = 'flex';
+            const opBtn = document.getElementById('sig-ctx-opacity-container');
+            if (opBtn) opBtn.style.display = anno.type === 'esign' ? 'none' : 'block';
             
             // Evitar que el menú se salga de la pantalla
             const rect = sigCtxMenu.getBoundingClientRect();
@@ -139,7 +142,10 @@ export function setupInteractionsMenu() {
             } else if (sizeType === 'M') {
                 newW = baseW;
                 newH = baseH;
-            } else if (sizeType === 'L') {
+            } else if (sizeType === 'L' && anno.type !== 'esign') {
+                newW = baseW * 1.5;
+                newH = baseH * 1.5;
+            } else if (sizeType === 'L' && anno.type === 'esign') {
                 const wrapper = state.ctxMenuActiveImg.closest('.pdf-page-wrapper');
                 let pdfPageWidth = 595.28; 
                 let pdfPageHeight = 841.89;
@@ -291,6 +297,20 @@ export function setupInteractionsMenu() {
     document.getElementById('sig-ctx-m')?.addEventListener('click', () => applySize('M'));
     document.getElementById('sig-ctx-l')?.addEventListener('click', () => applySize('L'));
 
+    const applyOpacity = (val) => {
+        if (state.ctxMenuActiveImg && state.ctxMenuActiveAnno) {
+            let anno = state.ctxMenuActiveAnno;
+            anno.opacity = val;
+            state.ctxMenuActiveImg.style.opacity = anno.opacity;
+            if(sigCtxMenu) sigCtxMenu.style.display = 'none';
+            commitAction();
+        }
+    };
+    document.getElementById('btn-op-100')?.addEventListener('click', () => applyOpacity(1.0));
+    document.getElementById('btn-op-85')?.addEventListener('click', () => applyOpacity(0.85));
+    document.getElementById('btn-op-60')?.addEventListener('click', () => applyOpacity(0.6));
+    document.getElementById('btn-op-30')?.addEventListener('click', () => applyOpacity(0.3));
+
     document.getElementById('sig-ctx-all-pages')?.addEventListener('click', async () => {
         if (state.ctxMenuActiveAnno) {
             const anno = state.ctxMenuActiveAnno;
@@ -307,3 +327,11 @@ export function setupInteractionsMenu() {
         }
     });
 }
+
+
+
+
+
+
+
+

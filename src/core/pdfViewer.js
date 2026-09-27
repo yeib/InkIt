@@ -76,6 +76,14 @@ async function reRenderDocument() {
 
 export async function loadDocument(pdfBytes) {
     try {
+        // Limpiar estado global antes de cargar un nuevo documento para no arrastrar anotaciones anteriores
+        const { setAnnotations } = await import('../modules/typewriter.js');
+        const { setImageAnnotations } = await import('../modules/signatures.js');
+        const { setHighlightAnnotations } = await import('../modules/highlights.js');
+        setAnnotations([]);
+        setImageAnnotations([]);
+        setHighlightAnnotations([]);
+
         currentPdfBytes = pdfBytes;
         container.innerHTML = '<div class="loading-state"><p>Cargando documento...</p></div>';
         
@@ -89,6 +97,11 @@ export async function loadDocument(pdfBytes) {
         for (let pageNum = 1; pageNum <= currentPdf.numPages; pageNum++) {
             await renderPage(pageNum);
         }
+
+        // Establecer el estado base (limpio) en el historial
+        const { globalHistory } = await import('../modules/history.js');
+        const { getGlobalState } = await import('../modules/state.js');
+        globalHistory.clear(getGlobalState());
     } catch (error) {
         console.error("Error al cargar el PDF:", error);
         container.innerHTML = `<div class="error-state"><p>Error al abrir el PDF: ${error.message}</p></div>`;
