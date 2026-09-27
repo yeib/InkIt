@@ -48,8 +48,9 @@ fn create_pfx(name: String, detail: String, password: String, out_path: String) 
 fn open_file(path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
         std::process::Command::new("explorer")
-            .arg(format!("/select,\"{}\"", path))
+            .raw_arg(format!("/select,\"{}\"", path.replace("/", "\\")))
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -92,4 +93,6 @@ pub fn run() {
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
+
+
 

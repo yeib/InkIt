@@ -101,6 +101,7 @@ export function createVaultItem(itemData, index, storageKey) {
     item.addEventListener('click', () => {
         state.selectedSignatureBase64 = dataUrl;
         state.selectedSignatureItemData = typeof itemData === 'string' ? { dataUrl: itemData } : itemData;
+        state.selectedSignatureItemData.type = storageKey === 'inkit_esigns' ? 'esign' : 'stamp';
         state.isStampingMode = true;
         state.pdfContainer.style.cursor = 'crosshair';
         document.getElementById('stamp-vault').style.display = 'none';

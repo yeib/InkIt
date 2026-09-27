@@ -67,6 +67,10 @@ export function setupExistingAnnotation(div, anno, scale) {
             commitAction();
         }
     });
+    
+    div.addEventListener('input', () => {
+        import('../state.js').then(m => m.setDirty(true));
+    });
 
     // Drag & Drop
     let isDragging = false;
