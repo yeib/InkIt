@@ -53,6 +53,7 @@ export function setupExistingAnnotation(div, anno, scale) {
     div.addEventListener('blur', () => {
         div.classList.remove('editing');
         const text = div.innerText.trim();
+          if (!document.body.contains(div)) return;
         if (text === '') {
             if (state.activeAnnotation === div) clearActiveAnnotation();
             div.remove();

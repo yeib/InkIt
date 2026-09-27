@@ -1,7 +1,7 @@
 export class HistoryManager {
     constructor() {
-        this.undoStack = [];
-        this.redoStack = [];
+        this.history = [];
+        this.currentIndex = -1;
         this.maxSize = 50;
         this.listeners = [];
     }
@@ -11,48 +11,72 @@ export class HistoryManager {
     }
 
     _notify() {
-        this.listeners.forEach(l => l({ canUndo: this.undoStack.length > 0, canRedo: this.redoStack.length > 0 }));
+        this.listeners.forEach(l => l({ canUndo: this.currentIndex > 0, canRedo: this.currentIndex < this.history.length - 1 }));
     }
 
     pushState(state) {
-        // deep clone the state (annotations and imageAnnotations, and highlights)
-        const clonedState = JSON.parse(JSON.stringify(state));
-        this.undoStack.push(clonedState);
-        if (this.undoStack.length > this.maxSize) {
-            this.undoStack.shift();
+        if (this.currentIndex < this.history.length - 1) {
+            this.history = this.history.slice(0, this.currentIndex + 1);
         }
-        this.redoStack = []; // clear redo stack on new action
+        this.history.push(JSON.parse(JSON.stringify(state)));
+        if (this.history.length > this.maxSize) {
+            this.history.shift();
+        } else {
+            this.currentIndex++;
+        }
         this._notify();
+        import("./state.js").then(m => {
+            if (this.currentIndex <= 0) {
+                m.setDirty(false);
+            } else {
+                m.setDirty(true);
+            }
+        });
     }
 
-    clear() {
-        this.undoStack = [];
-        this.redoStack = [];
+    clear(initialState) {
+        this.history = initialState ? [JSON.parse(JSON.stringify(initialState))] : [];
+        this.currentIndex = initialState ? 0 : -1;
         this._notify();
+        import("./state.js").then(m => {
+            if (this.currentIndex <= 0) {
+                m.setDirty(false);
+            } else {
+                m.setDirty(true);
+            }
+        });
     }
 
-    undo(currentState) {
-        if (this.undoStack.length === 0) return null;
-        
-        // Push current state to redo
-        this.redoStack.push(JSON.parse(JSON.stringify(currentState)));
-        
-        // Pop from undo
-        const previousState = this.undoStack.pop();
-        this._notify();
-        return JSON.parse(JSON.stringify(previousState));
+    undo() {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this._notify();
+        import("./state.js").then(m => {
+            if (this.currentIndex <= 0) {
+                m.setDirty(false);
+            } else {
+                m.setDirty(true);
+            }
+        });
+            return JSON.parse(JSON.stringify(this.history[this.currentIndex]));
+        }
+        return null;
     }
 
-    redo(currentState) {
-        if (this.redoStack.length === 0) return null;
-
-        // Push current state to undo
-        this.undoStack.push(JSON.parse(JSON.stringify(currentState)));
-
-        // Pop from redo
-        const nextState = this.redoStack.pop();
-        this._notify();
-        return JSON.parse(JSON.stringify(nextState));
+    redo() {
+        if (this.currentIndex < this.history.length - 1) {
+            this.currentIndex++;
+            this._notify();
+        import("./state.js").then(m => {
+            if (this.currentIndex <= 0) {
+                m.setDirty(false);
+            } else {
+                m.setDirty(true);
+            }
+        });
+            return JSON.parse(JSON.stringify(this.history[this.currentIndex]));
+        }
+        return null;
     }
 }
 

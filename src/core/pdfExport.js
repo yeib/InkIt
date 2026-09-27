@@ -12,11 +12,16 @@ export async function savePdf(currentPdfPath) {
         const { annotations } = await import('../modules/typewriter.js');
         const { imageAnnotations } = await import('../modules/signatures.js');
         const { highlightAnnotations } = await import('../modules/highlights.js');
-        
-        const targetPath = await save({
-            filters: [{ name: 'PDF', extensions: ['pdf'] }],
-            defaultPath: currentPdfPath.replace('.pdf', '_inkit.pdf')
-        });
+        const { documentDir, join, basename } = await import('@tauri-apps/api/path');
+        const { mkdir } = await import('@tauri-apps/plugin-fs');
+
+        const docsPath = await documentDir();
+        const editedFolder = await join(docsPath, 'InkIt', 'Edited');
+        await mkdir(editedFolder, { recursive: true });
+
+        const originalName = await basename(currentPdfPath);
+        const newName = originalName.replace('.pdf', `_inkit_${Date.now()}.pdf`);
+        const targetPath = await join(editedFolder, newName);
 
         if (targetPath) {
             let operations = [];
@@ -98,12 +103,56 @@ export async function savePdf(currentPdfPath) {
             const { setDirty } = await import('../modules/state.js');
             setDirty(false);
             
-            await message(t('alert.saved'), { title: 'InkIt', kind: 'info' });
+            // Show toast instead of blocking dialog
+            showToast(t('alert.saved') || 'Documento guardado', targetPath);
         }
     } catch (error) {
         console.error('Error guardando PDF:', error);
         await message(t('alert.error_save') + error, { title: t('alert.title.error'), kind: 'error' });
     }
+}
+
+function showToast(msg, path) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'glass-panel';
+    toast.style.padding = '12px 16px';
+    toast.style.borderRadius = '8px';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '12px';
+    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+    toast.style.animation = 'fadeIn 0.3s ease-out';
+    toast.style.background = 'rgba(20, 20, 20, 0.85)';
+    toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+
+    const text = document.createElement('span');
+    text.textContent = msg;
+    text.style.color = '#fff';
+    text.style.fontSize = '13px';
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-glass primary';
+    const btnText = document.documentElement.lang === 'es' || document.documentElement.lang === 'es-ES' ? 'Ver Archivo' : 'Show File';
+    btn.textContent = btnText;
+    btn.style.padding = '4px 12px';
+    btn.style.fontSize = '12px';
+    btn.onclick = async () => {
+        try {
+            await invoke('open_file', { path });
+        } catch(e) { console.error(e); }
+    };
+
+    toast.appendChild(text);
+    toast.appendChild(btn);
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => toast.remove(), 280);
+    }, 5000);
 }
 
 export async function exportPng(currentPdfPath) {
@@ -139,3 +188,4 @@ export async function exportPng(currentPdfPath) {
         await message(t('alert.error_export') + error.message, { title: t('alert.title.error'), kind: 'error' });
     }
 }
+

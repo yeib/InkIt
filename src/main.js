@@ -80,6 +80,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             await savePdf(currentPdfPath);
         });
 
+        document.getElementById('btn-quick-save')?.addEventListener('click', async () => {
+            const { savePdf } = await import('./core/pdfExport.js');
+            await savePdf(currentPdfPath);
+        });
+
         document.getElementById('menu-print')?.addEventListener('click', () => {
             mainMenuDropdown.style.display = 'none';
             window.print();
@@ -200,6 +205,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Inicializar Bóveda de Firmas
     initSignatures('pdf-viewer');
+
+    // Inicializar UI de Historial (Deshacer/Rehacer)
+    initHistoryUI();
     
     // Inicialización de componentes UI
     const btnOpenPdf = document.getElementById('btn-open-pdf');
@@ -272,3 +280,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Error al cargar PDF inicial:", e);
     }
 });
+

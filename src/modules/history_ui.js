@@ -12,15 +12,13 @@ export function initHistoryUI() {
 
     const doUndo = () => {
         if (btnUndo.disabled) return;
-        const currentState = getGlobalState();
-        const prevState = globalHistory.undo(currentState);
+        const prevState = globalHistory.undo();
         if (prevState) restoreGlobalState(prevState);
     };
 
     const doRedo = () => {
         if (btnRedo.disabled) return;
-        const currentState = getGlobalState();
-        const nextState = globalHistory.redo(currentState);
+        const nextState = globalHistory.redo();
         if (nextState) restoreGlobalState(nextState);
     };
 

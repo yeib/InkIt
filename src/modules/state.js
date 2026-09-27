@@ -38,9 +38,15 @@ export function restoreGlobalState(state) {
 }
 
 export let isDirty = false;
-export function setDirty(val) { isDirty = val; }
+export function setDirty(val) { 
+    isDirty = val; 
+    const btnSave = document.getElementById('btn-quick-save');
+    if (btnSave) {
+        btnSave.style.display = isDirty ? 'inline-block' : 'none';
+    }
+}
 
 export function commitAction() {
-    isDirty = true;
+    setDirty(true);
     globalHistory.pushState(getGlobalState());
 }
