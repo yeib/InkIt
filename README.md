@@ -43,7 +43,7 @@ Currently, InkIt is built as a hybrid application to maximize UI fluidity and ra
 > 
 > InkIt has reached its ultimate v1.0 milestone! All PDF stream parsing, injection, and visual flattening are now processed natively in our **Rust backend** for maximum performance and zero memory leaks. 
 > 
-> With v1.0, we've successfully introduced **Cryptographic Digital Signatures (PKCS#7/CMS)** with .pfx/.p12 certificates, a brand new **Multi-Document Side-Bubble Interface**, and a bulletproof Undo/Redo history manager. The application is now fully packaged for the Microsoft Store (MSIX) and ready for professional, legally binding workflows.
+> With v1.0, we've successfully introduced **Cryptographic Digital Signatures (PKCS#7/CMS)** with .pfx/.p12 certificates, seamless **Multi-Instance OS Integration**, and a bulletproof Undo/Redo history manager. The application is now fully packaged for the Microsoft Store (MSIX) and ready for professional, legally binding workflows.
 
 ## 🚀 Getting Started
 
@@ -95,4 +95,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   <i>Part of the <b>Yeib Ecosystem</b> — Fast, Lightweight Native Windows Apps.</i><br>
   <a href="https://yeib.cl">yeib.cl</a>
 </div>
+
 
