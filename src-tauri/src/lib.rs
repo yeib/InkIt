@@ -3,11 +3,13 @@ pub mod utils;
 
 #[tauri::command]
 fn read_pdf(path: String) -> Result<Vec<u8>, String> {
+    if path.contains('\0') { return Err("Invalid path".to_string()); }
     std::fs::read(path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn save_file(path: String, contents: Vec<u8>) -> Result<(), String> {
+    if path.contains('\0') { return Err("Invalid path".to_string()); }
     std::fs::write(&path, contents).map_err(|e| format!("Error guardando archivo: {}", e))
 }
 
@@ -48,8 +50,9 @@ fn create_pfx(name: String, detail: String, password: String, out_path: String) 
 fn open_file(path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
         std::process::Command::new("explorer")
-            .arg(format!("/select,\"{}\"", path))
+            .raw_arg(format!("/select,\"{}\"", path.replace("/", "\\")))
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -78,6 +81,7 @@ pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
     .invoke_handler(tauri::generate_handler![read_pdf, save_file, get_initial_pdf, flatten_pdf, sign_pdf, create_pfx, open_file])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -92,4 +96,6 @@ pub fn run() {
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
+
+
 

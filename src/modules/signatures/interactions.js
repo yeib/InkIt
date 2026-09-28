@@ -1,6 +1,53 @@
 import { state, imageAnnotations } from './state.js';
-import { t } from '../translations.js';
+import { t, getLang } from '../translations.js';
 import { commitAction } from '../state.js';
+
+function updateAnnotationElement(anno) {
+    const pageWrapper = document.querySelector(`.pdf-page-wrapper[data-page-num="${anno.pageNum}"]`);
+    const img = [...(pageWrapper?.querySelectorAll('.img-annotation') || [])]
+        .find(element => element.dataset.id === anno.id);
+    if (!img) return;
+
+    const scale = parseFloat(pageWrapper.dataset.scale || 1.0);
+    img.style.left = `${anno.x * scale}px`;
+    img.style.top = `${anno.y * scale}px`;
+    img.style.width = `${anno.width * scale}px`;
+    img.style.height = `${anno.height * scale}px`;
+    img.style.opacity = anno.opacity ?? 1.0;
+    if (img.src !== anno.dataUrl) img.src = anno.dataUrl;
+}
+
+function copyAnnotationAppearance(source, target) {
+    target.x = source.x;
+    target.y = source.y;
+    target.width = source.width;
+    target.height = source.height;
+    target.opacity = source.opacity ?? 1.0;
+    target.dataUrl = source.dataUrl;
+    target.footerDataUrl = source.footerDataUrl;
+    target.normalDataUrl = source.normalDataUrl;
+    target.originalRatio = source.originalRatio;
+    target.normalRatio = source.normalRatio;
+    target.initialWidth = source.initialWidth;
+    target.type = source.type;
+    updateAnnotationElement(target);
+}
+
+function syncLinkedAnnotations(master) {
+    if (!master.isMaster || !master.groupId) return;
+
+    imageAnnotations
+        .filter(anno => anno.groupId === master.groupId && anno.isLinked && !anno.isMaster)
+        .forEach(anno => copyAnnotationAppearance(master, anno));
+}
+
+function detachFromMaster(anno) {
+    if (!anno.isMaster && anno.isLinked) anno.isLinked = false;
+}
+
+function createGroupId() {
+    return `sig_group_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export function renderImageAnnotation(anno, wrapper, scale) {
     const img = document.createElement('img');
@@ -14,6 +61,7 @@ export function renderImageAnnotation(anno, wrapper, scale) {
     img.style.width = (anno.width * scale) + 'px';
     img.style.height = (anno.height * scale) + 'px';
     
+    img.style.opacity = anno.opacity ?? 1.0;
     wrapper.appendChild(img);
     
     // Drag & Drop logic
@@ -30,29 +78,42 @@ export function renderImageAnnotation(anno, wrapper, scale) {
         initialTop = parseFloat(img.style.top);
         img.style.cursor = 'grabbing';
         e.stopPropagation();
-    });
 
-    const onMouseMove = (e) => {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        img.style.left = (initialLeft + dx) + 'px';
-        img.style.top = (initialTop + dy) + 'px';
-    };
-
-    const onMouseUp = () => {
-        if (isDragging) {
-            isDragging = false;
-            img.style.cursor = 'move';
-            // Guardar nueva posición
+        const onMouseMove = (ev) => {
+            if (!isDragging) return;
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+            if (dx !== 0 || dy !== 0) detachFromMaster(anno);
+            img.style.left = (initialLeft + dx) + 'px';
+            img.style.top = (initialTop + dy) + 'px';
             anno.x = parseFloat(img.style.left) / scale;
             anno.y = parseFloat(img.style.top) / scale;
-            commitAction();
-        }
-    };
+            syncLinkedAnnotations(anno);
+        };
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+        const onMouseUp = () => {
+            if (isDragging) {
+                isDragging = false;
+                img.style.cursor = 'pointer';
+                let currentScale = scale;
+                if (!currentScale) {
+                    const wrapper = img.closest('.pdf-page-wrapper');
+                    currentScale = wrapper ? parseFloat(wrapper.dataset.scale || 1.0) : 1.0;
+                }
+                anno.x = parseFloat(img.style.left) / currentScale;
+                anno.y = parseFloat(img.style.top) / currentScale;
+                syncLinkedAnnotations(anno);
+                commitAction();
+            }
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // Listeners are now bound inside mousedown
 
     // Context Menu (Right Click)
     img.addEventListener('contextmenu', (e) => {
@@ -66,6 +127,26 @@ export function renderImageAnnotation(anno, wrapper, scale) {
         const sigCtxMenu = document.getElementById('sig-context-menu');
         if(sigCtxMenu) {
             sigCtxMenu.style.display = 'flex';
+            const opBtn = document.getElementById('sig-ctx-opacity-container');
+            if (opBtn) opBtn.style.display = 'block';
+            const linkBtn = document.getElementById('sig-ctx-link');
+            const master = anno.groupId && imageAnnotations.find(item => item.groupId === anno.groupId && item.isMaster);
+            if (linkBtn) {
+                linkBtn.style.display = !anno.isMaster && master ? 'inline-flex' : 'none';
+                if (!anno.isMaster && master) {
+                    const key = anno.isLinked ? 'ctx.unlink' : 'ctx.link_master';
+                    linkBtn.textContent = t(key);
+                    linkBtn.dataset.action = anno.isLinked ? 'unlink' : 'link';
+                }
+            }
+            const opacity = anno.opacity || 1.0;
+            const activeOpacityButton = opacity >= 0.95 ? 'btn-op-100'
+                : opacity >= 0.8 ? 'btn-op-85'
+                : opacity >= 0.5 ? 'btn-op-60'
+                : 'btn-op-30';
+            ['btn-op-100', 'btn-op-85', 'btn-op-60', 'btn-op-30'].forEach(id => {
+                document.getElementById(id)?.classList.toggle('active', id === activeOpacityButton);
+            });
             
             // Evitar que el menú se salga de la pantalla
             const rect = sigCtxMenu.getBoundingClientRect();
@@ -98,7 +179,6 @@ export function setupInteractionsMenu() {
     document.addEventListener('click', (e) => {
         if (sigCtxMenu && sigCtxMenu.style.display === 'flex' && !sigCtxMenu.contains(e.target)) {
             sigCtxMenu.style.display = 'none';
-            commitAction();
         }
     });
 
@@ -108,7 +188,16 @@ export function setupInteractionsMenu() {
             // find index and remove
             const idx = imageAnnotations.findIndex(a => a.id === state.ctxMenuActiveAnno.id);
             if (idx > -1) {
+                const deletedAnno = imageAnnotations[idx];
                 imageAnnotations.splice(idx, 1);
+                if (deletedAnno.isMaster) {
+                    imageAnnotations
+                        .filter(anno => anno.groupId === deletedAnno.groupId && anno.isLinked)
+                        .forEach(anno => {
+                            anno.isLinked = false;
+                            anno.groupId = null;
+                        });
+                }
             }
             if (sigCtxMenu) sigCtxMenu.style.display = 'none';
             commitAction();
@@ -118,6 +207,7 @@ export function setupInteractionsMenu() {
     const applySize = (sizeType) => {
         if (state.ctxMenuActiveImg && state.ctxMenuActiveAnno) {
             let anno = state.ctxMenuActiveAnno;
+            detachFromMaster(anno);
             let ratio = anno.originalRatio || (anno.width / anno.height);
             
             // Si pasamos de L (footer) a S o M, y tenemos el original guardado, restauramos
@@ -139,7 +229,10 @@ export function setupInteractionsMenu() {
             } else if (sizeType === 'M') {
                 newW = baseW;
                 newH = baseH;
-            } else if (sizeType === 'L') {
+            } else if (sizeType === 'L' && anno.type !== 'esign') {
+                newW = baseW * 1.5;
+                newH = baseH * 1.5;
+            } else if (sizeType === 'L' && anno.type === 'esign') {
                 const wrapper = state.ctxMenuActiveImg.closest('.pdf-page-wrapper');
                 let pdfPageWidth = 595.28; 
                 let pdfPageHeight = 841.89;
@@ -186,8 +279,9 @@ export function setupInteractionsMenu() {
                         
                         fCtx.fillStyle = '#333333';
                         fCtx.font = '12px Arial';
-                        fCtx.fillText(`Verificado digitalmente por validación criptográfica PAdES`, 20 + drawW + 20, 25);
-                        fCtx.fillText(`Fecha de firma: ${new Date().toLocaleString()}`, 20 + drawW + 20, 45);
+                        const isEs = getLang().startsWith('es');
+                        fCtx.fillText(isEs ? 'Verificado digitalmente por validación criptográfica PAdES' : 'Digitally verified by PAdES cryptographic validation', 20 + drawW + 20, 25);
+                        fCtx.fillText(isEs ? `Fecha de firma: ${new Date().toLocaleString()}` : `Signature Date: ${new Date().toLocaleString()}`, 20 + drawW + 20, 45);
                         
                         // Agregar el logo de InkIt a la derecha
                         const drawLogo = () => {
@@ -219,6 +313,7 @@ export function setupInteractionsMenu() {
                                 state.ctxMenuActiveImg.style.height = (h * state.ctxMenuActiveScale) + 'px';
                                 state.ctxMenuActiveImg.style.left = (anno.x * state.ctxMenuActiveScale) + 'px';
                                 state.ctxMenuActiveImg.style.top = (anno.y * state.ctxMenuActiveScale) + 'px';
+                                syncLinkedAnnotations(anno);
                                 commitAction();
                             };
                             tmpImg.src = anno.footerDataUrl;
@@ -260,6 +355,7 @@ export function setupInteractionsMenu() {
                         state.ctxMenuActiveImg.style.height = (h * state.ctxMenuActiveScale) + 'px';
                         state.ctxMenuActiveImg.style.left = (anno.x * state.ctxMenuActiveScale) + 'px';
                         state.ctxMenuActiveImg.style.top = (anno.y * state.ctxMenuActiveScale) + 'px';
+                        syncLinkedAnnotations(anno);
                         commitAction();
                     };
                     tmpImg.src = anno.footerDataUrl;
@@ -283,6 +379,7 @@ export function setupInteractionsMenu() {
             state.ctxMenuActiveImg.style.height = (newH * state.ctxMenuActiveScale) + 'px';
             
             if(sigCtxMenu) sigCtxMenu.style.display = 'none';
+            syncLinkedAnnotations(anno);
             commitAction();
         }
     };
@@ -291,19 +388,89 @@ export function setupInteractionsMenu() {
     document.getElementById('sig-ctx-m')?.addEventListener('click', () => applySize('M'));
     document.getElementById('sig-ctx-l')?.addEventListener('click', () => applySize('L'));
 
+    const applyOpacity = (val) => {
+        if (state.ctxMenuActiveImg && state.ctxMenuActiveAnno) {
+            let anno = state.ctxMenuActiveAnno;
+            detachFromMaster(anno);
+            anno.opacity = val;
+            state.ctxMenuActiveImg.style.opacity = anno.opacity;
+            const activeOpacityButton = val === 1.0 ? 'btn-op-100'
+                : val === 0.85 ? 'btn-op-85'
+                : val === 0.6 ? 'btn-op-60'
+                : 'btn-op-30';
+            ['btn-op-100', 'btn-op-85', 'btn-op-60', 'btn-op-30'].forEach(id => {
+                document.getElementById(id)?.classList.toggle('active', id === activeOpacityButton);
+            });
+            if(sigCtxMenu) sigCtxMenu.style.display = 'none';
+            syncLinkedAnnotations(anno);
+            commitAction();
+        }
+    };
+    document.getElementById('btn-op-100')?.addEventListener('click', () => applyOpacity(1.0));
+    document.getElementById('btn-op-85')?.addEventListener('click', () => applyOpacity(0.85));
+    document.getElementById('btn-op-60')?.addEventListener('click', () => applyOpacity(0.6));
+    document.getElementById('btn-op-30')?.addEventListener('click', () => applyOpacity(0.3));
+
+    document.getElementById('sig-ctx-link')?.addEventListener('click', () => {
+        const anno = state.ctxMenuActiveAnno;
+        if (!anno || anno.isMaster || !anno.groupId) return;
+
+        const master = imageAnnotations.find(item => item.groupId === anno.groupId && item.isMaster);
+        if (!master) return;
+
+        if (anno.isLinked) {
+            anno.isLinked = false;
+        } else {
+            copyAnnotationAppearance(master, anno);
+            anno.isLinked = true;
+        }
+        if (sigCtxMenu) sigCtxMenu.style.display = 'none';
+        commitAction();
+    });
+
     document.getElementById('sig-ctx-all-pages')?.addEventListener('click', async () => {
         if (state.ctxMenuActiveAnno) {
             const anno = state.ctxMenuActiveAnno;
             const pdfViewer = await import('../../core/pdfViewer.js');
             const totalPages = pdfViewer.getTotalPages();
-            
+            const groupId = anno.isMaster && anno.groupId ? anno.groupId : createGroupId();
+            anno.groupId = groupId;
+            anno.isMaster = true;
+            anno.isLinked = false;
+
             for (let i = 1; i <= totalPages; i++) {
                 if (i !== anno.pageNum) {
-                    const { addImageAnnotationToPage } = await import('../signatures.js');
-                    addImageAnnotationToPage(anno.dataUrl, i, anno.x, anno.y, anno.width);
+                    let clone = imageAnnotations.find(item => item.groupId === groupId && item.pageNum === i && !item.isMaster);
+                    const isNewClone = !clone;
+                    if (!clone) {
+                        clone = {
+                            ...anno,
+                            id: `sig_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+                            pageNum: i,
+                            isMaster: false,
+                            isLinked: true
+                        };
+                        imageAnnotations.push(clone);
+                    } else {
+                        copyAnnotationAppearance(anno, clone);
+                        clone.isLinked = true;
+                    }
+
+                    const pageWrapper = document.querySelector(`.pdf-page-wrapper[data-page-num="${i}"]`);
+                    if (isNewClone && pageWrapper?.dataset.rendered === 'true') {
+                        renderImageAnnotation(clone, pageWrapper, parseFloat(pageWrapper.dataset.scale || 1.0));
+                    }
                 }
             }
             if(sigCtxMenu) sigCtxMenu.style.display = 'none';
+            commitAction();
         }
     });
 }
+
+
+
+
+
+
+

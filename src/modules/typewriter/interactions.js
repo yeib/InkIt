@@ -67,6 +67,10 @@ export function setupExistingAnnotation(div, anno, scale) {
             commitAction();
         }
     });
+    
+    div.addEventListener('input', () => {
+        import('../state.js').then(m => m.setDirty(true));
+    });
 
     // Drag & Drop
     let isDragging = false;
@@ -86,35 +90,37 @@ export function setupExistingAnnotation(div, anno, scale) {
         div.style.cursor = 'grabbing';
         
         e.stopPropagation();
+
+        const onMouseMove = (ev) => {
+            if (!isDragging) return;
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+            div.style.left = (initialLeft + dx) + 'px';
+            div.style.top = (initialTop + dy) + 'px';
+        };
+
+        const onMouseUp = () => {
+            if (isDragging) {
+                isDragging = false;
+                div.style.cursor = state.isTypewriterMode ? 'text' : 'move';
+                let currentScale = scale;
+                if (!currentScale) {
+                    const wrapper = div.closest('.pdf-page-wrapper');
+                    currentScale = wrapper ? parseFloat(wrapper.dataset.scale || 1.0) : 1.0;
+                }
+                anno.x = parseFloat(div.style.left) / currentScale;
+                anno.y = parseFloat(div.style.top) / currentScale;
+                commitAction();
+            }
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     });
 
-    const onMouseMove = (e) => {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        div.style.left = (initialLeft + dx) + 'px';
-        div.style.top = (initialTop + dy) + 'px';
-    };
-
-    const onMouseUp = () => {
-        if (isDragging) {
-            isDragging = false;
-            div.style.cursor = state.isTypewriterMode ? 'text' : 'move';
-            
-            let currentScale = scale;
-            if (!currentScale) {
-                const wrapper = div.closest('.pdf-page-wrapper');
-                currentScale = wrapper ? parseFloat(wrapper.dataset.scale || 1.0) : 1.0;
-            }
-
-            anno.x = parseFloat(div.style.left) / currentScale;
-            anno.y = parseFloat(div.style.top) / currentScale;
-            commitAction();
-        }
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    // Listeners are now bound inside mousedown
 }
 
 export function renderAnnotation(anno, wrapper, scale) {
@@ -148,3 +154,4 @@ export function renderAnnotationsForPage(wrapper, pageNum, scale) {
         renderAnnotation(anno, wrapper, scale);
     });
 }
+

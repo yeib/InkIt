@@ -7,7 +7,7 @@ import { renderVaults, importSignature, saveSignature } from './signatures/vault
 
 export { imageAnnotations, renderImageAnnotationsForPage, setImageAnnotations };
 
-export function addImageAnnotationToPage(dataUrl, pageNum, x, y, customWidth = null, footerDataUrl = null) {
+export function addImageAnnotationToPage(dataUrl, pageNum, x, y, customWidth = null, footerDataUrl = null, type = 'stamp', opacity = 1.0) {
     const pageWrapper = document.querySelector(`.pdf-page-wrapper[data-page-num="${pageNum}"]`);
     const currentScale = pageWrapper ? parseFloat(pageWrapper.dataset.scale || 1.0) : 1.0;
     
@@ -29,7 +29,9 @@ export function addImageAnnotationToPage(dataUrl, pageNum, x, y, customWidth = n
             dataUrl: dataUrl,
             normalDataUrl: dataUrl,
             normalRatio: ratio,
-            footerDataUrl: footerDataUrl
+            footerDataUrl: footerDataUrl,
+            type: type,
+            opacity: opacity
         };
         
         imageAnnotations.push(newImgAnno);
@@ -143,8 +145,9 @@ export function initSignatures(containerId) {
             
             const itemData = state.selectedSignatureItemData || {};
             const footerDataUrl = itemData.footerDataUrl || null;
+            const type = itemData.type || 'stamp';
             
-            addImageAnnotationToPage(state.selectedSignatureBase64, pageNum, centeredX, centeredY, baseW, footerDataUrl);
+            addImageAnnotationToPage(state.selectedSignatureBase64, pageNum, centeredX, centeredY, baseW, footerDataUrl, type);
             
             // Volver a modo normal
             window.disableSignatures();

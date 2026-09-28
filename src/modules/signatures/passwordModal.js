@@ -1,18 +1,8 @@
 // passwordModal.js
-//
-// Reemplaza los `window.prompt()` usados para pedir contraseñas de
-// certificados .pfx. `window.prompt` tiene tres problemas para este caso:
-//   1. Es un <input type="text">: la contraseña queda visible en pantalla
-//      mientras se escribe.
-//   2. No se puede estilar ni pedir confirmación (repetir la contraseña).
-//   3. Es bloqueante y en algunos WebViews de Tauri se comporta distinto
-//      entre plataformas.
-//
-// Este módulo inyecta un modal propio (HTML/CSS inline, sin dependencias)
-// y expone dos funciones que devuelven una Promise<string|null>, igual que
-// window.prompt: null si el usuario cancela.
+import { t } from '../translations.js';
 
 let modalEl = null;
+
 
 function ensureModal() {
     if (modalEl) return modalEl;
@@ -121,14 +111,14 @@ function openModal({ title, hint, requireConfirm, allowEmpty }) {
     titleEl.textContent = title;
     hintEl.textContent = hint;
     hintEl.style.display = hint ? 'block' : 'none';
-    label1.textContent = requireConfirm ? 'Contraseña' : 'Contraseña';
-    label2.textContent = 'Repite la contraseña';
+    label1.textContent = t('modal.pw.password');
+    label2.textContent = t('modal.pw.repeat');
     confirmRow.style.display = requireConfirm ? 'block' : 'none';
     errorEl.style.display = 'none';
     input1.value = '';
     input2.value = '';
-    btnCancel.textContent = 'Cancelar';
-    btnOk.textContent = 'Confirmar';
+    btnCancel.textContent = t('modal.btn.cancel');
+    btnOk.textContent = t('modal.btn.confirm');
 
     overlay.classList.add('open');
     setTimeout(() => input1.focus(), 0);
@@ -148,13 +138,13 @@ function openModal({ title, hint, requireConfirm, allowEmpty }) {
             if (requireConfirm) {
                 const pw2 = input2.value;
                 if (pw1 !== pw2) {
-                    errorEl.textContent = 'Las contraseñas no coinciden.';
+                    errorEl.textContent = t('modal.pw.mismatch');
                     errorEl.style.display = 'block';
                     return;
                 }
             }
             if (!allowEmpty && pw1.trim() === '') {
-                errorEl.textContent = 'La contraseña no puede estar vacía.';
+                errorEl.textContent = t('modal.pw.empty');
                 errorEl.style.display = 'block';
                 return;
             }

@@ -67,6 +67,9 @@ export function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSiz
         }
     };
     div.addEventListener('blur', onBlur);
+    div.addEventListener('input', () => {
+        import('../state.js').then(m => m.setDirty(true));
+    });
 }
 
 export function initTypewriter(containerId) {
@@ -107,6 +110,7 @@ export function initTypewriter(containerId) {
         if(colorBtns[0]) colorBtns[0].classList.add('active');
         
         if(toolbar) toolbar.style.display = 'flex';
+        stampBtns.forEach(b => b.classList.remove('active'));
         if(state.pdfContainer) state.pdfContainer.style.cursor = 'text';
     };
 
@@ -151,12 +155,22 @@ export function initTypewriter(containerId) {
 
     stampBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const symbol = e.target.dataset.stamp;
-            if (symbol === '✓' || symbol === '✗') {
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                state.pendingStampType = null;
+                state.pendingStampSymbol = null;
+                if(state.pdfContainer) state.pdfContainer.style.cursor = 'text';
+                return;
+            }
+            stampBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const symbol = btn.dataset.stamp;
+            if (symbol) {
                 state.pendingStampType = 'symbol';
                 state.pendingStampSymbol = symbol;
                 if(state.pdfContainer) state.pdfContainer.style.cursor = 'crosshair';
-            } else if (e.target.id === 'btn-stamp-date') {
+            } else if (btn.id === 'btn-stamp-date' || e.target.id === 'btn-stamp-date') {
                 state.pendingStampType = 'date';
                 state.pendingStampSymbol = new Date().toLocaleDateString();
                 if(state.pdfContainer) state.pdfContainer.style.cursor = 'crosshair';
@@ -188,13 +202,15 @@ export function initTypewriter(containerId) {
                     y: baseY,
                     text: state.pendingStampSymbol,
                     fontSize: state.currentFontSize,
-                    color: state.currentColor
+                    color: state.currentColor,
+                    bgColor: "transparent"
                 };
                 annotations.push(newAnno);
                 renderAnnotation(newAnno, pageWrapper, currentScale);
+                commitAction();
             }
             
-            state.pendingStampType = null;
+            // state.pendingStampType = null;
             state.pendingStampSymbol = null;
             state.pdfContainer.style.cursor = 'text'; 
             return;

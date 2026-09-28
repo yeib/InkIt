@@ -59,53 +59,70 @@ export function attachHighlightOverlay(pageWrapper, pageNum, scale) {
     renderHighlightsForPage(pageNum, canvas, scale);
     
     // Eventos
-    pageWrapper.addEventListener('mousedown', (e) => {
-        if (!isHighlightMode) return;
-        if (e.button !== 0) return;
+    if (!pageWrapper._highlightEventsAttached) {
+        pageWrapper._highlightEventsAttached = true;
         
-        isDrawing = true;
-        const rect = pageWrapper.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / scale;
-        const y = (e.clientY - rect.top) / scale;
-        
-        currentPathData = [{x, y}];
-    });
+        pageWrapper.addEventListener('mousedown', (e) => {
+            if (!isHighlightMode) return;
+            if (e.button !== 0) return;
+            
+            isDrawing = true;
+            const pScale = parseFloat(pageWrapper.dataset.scale);
+            const rect = pageWrapper.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / pScale;
+            const y = (e.clientY - rect.top) / pScale;
+            
+            currentPathData = [{x, y}];
+        });
 
-    pageWrapper.addEventListener('mousemove', (e) => {
-        if (!isHighlightMode || !isDrawing) return;
-        
-        const rect = pageWrapper.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / scale;
-        const y = (e.clientY - rect.top) / scale;
-        
-        currentPathData.push({x, y});
-        
-        // Dibujar frame actual
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        renderHighlightsForPage(pageNum, canvas, scale);
-        drawPath(ctx, currentPathData, currentColor, scale);
-    });
+        pageWrapper.addEventListener('mousemove', (e) => {
+            if (!isHighlightMode || !isDrawing) return;
+            
+            const pNum = parseInt(pageWrapper.dataset.pageNum);
+            const pScale = parseFloat(pageWrapper.dataset.scale);
+            const rect = pageWrapper.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / pScale;
+            const y = (e.clientY - rect.top) / pScale;
+            
+            currentPathData.push({x, y});
+            
+            const cvs = pageWrapper.querySelector('.highlight-canvas');
+            if(cvs) {
+                const context = cvs.getContext('2d');
+                context.clearRect(0, 0, cvs.width, cvs.height);
+                renderHighlightsForPage(pNum, cvs, pScale);
+                drawPath(context, currentPathData, currentColor, pScale);
+            }
+        });
 
-    const finishDrawing = () => {
-        if (!isDrawing) return;
-        isDrawing = false;
-        
-        if (currentPathData.length > 1) {
-            highlightAnnotations.push({
-                id: 'hl_' + Date.now(),
-                pageNum: pageNum,
-                color: currentColor,
-                points: [...currentPathData]
-            });
-            commitAction();
-        }
-        
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        renderHighlightsForPage(pageNum, canvas, scale);
-    };
+        const finishDrawing = () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            const pNum = parseInt(pageWrapper.dataset.pageNum);
+            const pScale = parseFloat(pageWrapper.dataset.scale);
 
-    pageWrapper.addEventListener('mouseup', finishDrawing);
-    pageWrapper.addEventListener('mouseleave', finishDrawing);
+            if (currentPathData.length > 1) {
+                highlightAnnotations.push({
+                    id: 'hl_' + Date.now(),
+                    pageNum: pNum,
+                    color: currentColor,
+                    points: [...currentPathData]
+                });
+                commitAction();
+            }
+            
+            const cvs = pageWrapper.querySelector('.highlight-canvas');
+            if(cvs) {
+                const context = cvs.getContext('2d');
+                context.clearRect(0, 0, cvs.width, cvs.height);
+                renderHighlightsForPage(pNum, cvs, pScale);
+            }
+        };
+
+        pageWrapper.addEventListener('mouseup', finishDrawing);
+        pageWrapper.addEventListener('mouseleave', finishDrawing);
+    }
 }
 
 function drawPath(ctx, points, color, scale) {

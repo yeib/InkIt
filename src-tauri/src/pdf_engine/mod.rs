@@ -19,6 +19,9 @@ pub struct Point {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum PdfOperation {
+    DarkModeInvert {
+        page: u32,
+    },
     Image {
         page: u32,
         x: f32,
@@ -26,6 +29,7 @@ pub enum PdfOperation {
         width: f32,
         height: f32,
         base64_data: String,
+        opacity: Option<f32>,
     },
     Text {
         page: u32,
@@ -257,40 +261,84 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
 
     for op in recipe.operations {
         match op {
-            PdfOperation::Image { page, x, y, width, height, base64_data } => {
-                let page_id = match pages.get(&page) { Some(id) => *id, None => continue };
+            PdfOperation::DarkModeInvert { page } => {
+                let page_id = pages.get(&page)
+                    .copied()
+                    .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
+                let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
+                let page_width = page_conf.map(|c| c.width).unwrap_or(612.0);
+                let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
+
+                let mut dict = lopdf::Dictionary::new();
+                dict.set("Type", lopdf::Object::Name(b"ExtGState".to_vec()));
+                dict.set("BM", lopdf::Object::Name(b"Difference".to_vec()));
+                let ext_id = doc.add_object(lopdf::Object::Dictionary(dict));
+                
+                let gs_name = format!("YeibGS_DarkMode");
+                insert_resource_in_page(&mut doc, page_id, "ExtGState", &gs_name, ext_id)
+                    .map_err(|e| format!("Error registrando dark mode en página {page}: {e}"))?;
+
+                let ops = vec![
+                    Operation::new("q", vec![]),
+                    Operation::new("gs", vec![lopdf::Object::Name(gs_name.as_bytes().to_vec())]),
+                    Operation::new("rg", vec![1.0.into(), 1.0.into(), 1.0.into()]),
+                    Operation::new("re", vec![0.0.into(), 0.0.into(), page_width.into(), page_height.into()]),
+                    Operation::new("f", vec![]),
+                    Operation::new("Q", vec![]),
+                ];
+                append_content_stream(&mut doc, page_id, ops)
+                    .map_err(|e| format!("Error agregando dark mode a página {page}: {e}"))?;
+            },
+            PdfOperation::Image { page, x, y, width, height, base64_data, opacity } => {
+                let page_id = pages.get(&page)
+                    .copied()
+                    .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
                 let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
                 let pdf_y = map_y(y, page_height, height);
 
-                if let Ok(img) = decode_base64_png(&base64_data) {
-                    if let Ok(image_id) = build_image_xobject(&mut doc, img) {
-                        img_counter += 1;
-                        let xobj_name = format!("YeibImg{}", img_counter);
-                        let _ = insert_resource_in_page(&mut doc, page_id, "XObject", &xobj_name, image_id);
+                let img = decode_base64_png(&base64_data).map_err(|e| format!("Error decodificando imagen: {}", e))?;
+                let image_id = build_image_xobject(&mut doc, img)
+                    .map_err(|e| format!("Error construyendo imagen PDF: {}", e))?;
+                img_counter += 1;
+                let xobj_name = format!("YeibImg{}", img_counter);
+                insert_resource_in_page(&mut doc, page_id, "XObject", &xobj_name, image_id)
+                    .map_err(|e| format!("Error registrando imagen en página {page}: {e}"))?;
 
-                        let ops = vec![
-                            Operation::new("q", vec![]),
-                            Operation::new("cm", vec![
-                                width.into(), 0.0.into(), 0.0.into(),
-                                height.into(), x.into(), pdf_y.into(),
-                            ]),
-                            Operation::new("Do", vec![Object::Name(xobj_name.as_bytes().to_vec())]),
-                            Operation::new("Q", vec![]),
-                        ];
-                        let _ = append_content_stream(&mut doc, page_id, ops);
-                    }
+                let opac = opacity.unwrap_or(1.0);
+                let mut ops = vec![Operation::new("q", vec![])];
+
+                if opac < 1.0 {
+                    let gs_id = build_extgstate_dictionary(&mut doc, opac);
+                    let gs_name = format!("YeibGS_Img{}", img_counter);
+                    insert_resource_in_page(&mut doc, page_id, "ExtGState", &gs_name, gs_id)
+                        .map_err(|e| format!("Error registrando opacidad en página {page}: {e}"))?;
+                    ops.push(Operation::new("gs", vec![Object::Name(gs_name.as_bytes().to_vec())]));
                 }
+
+                ops.extend(vec![
+                    Operation::new("cm", vec![
+                        width.into(), 0.0.into(), 0.0.into(),
+                        height.into(), x.into(), pdf_y.into(),
+                    ]),
+                    Operation::new("Do", vec![Object::Name(xobj_name.as_bytes().to_vec())]),
+                    Operation::new("Q", vec![]),
+                ]);
+                append_content_stream(&mut doc, page_id, ops)
+                    .map_err(|e| format!("Error agregando imagen a página {page}: {e}"))?;
             },
             PdfOperation::Text { page, x, y, text, font_size, color, bg_color } => {
-                let page_id = match pages.get(&page) { Some(id) => *id, None => continue };
+                let page_id = pages.get(&page)
+                    .copied()
+                    .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
                 let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
                 let pdf_y = map_y(y, page_height, font_size); // Approx bounding box
 
                 // Register Font if not already registered in this document
                 let f1_id = *font_f1_id.get_or_insert_with(|| build_font_dictionary(&mut doc));
-                let _ = insert_resource_in_page(&mut doc, page_id, "Font", "YeibF1", f1_id);
+                insert_resource_in_page(&mut doc, page_id, "Font", "YeibF1", f1_id)
+                    .map_err(|e| format!("Error registrando fuente en página {page}: {e}"))?;
 
                 let (r, g, b) = parse_hex_color(&color);
                 let text_bytes = utf8_to_winansi(&text);
@@ -320,17 +368,21 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
                     Operation::new("Q", vec![]),
                 ]);
 
-                let _ = append_content_stream(&mut doc, page_id, ops);
+                append_content_stream(&mut doc, page_id, ops)
+                    .map_err(|e| format!("Error agregando texto a página {page}: {e}"))?;
             },
             PdfOperation::Highlight { page, points, color, opacity } => {
-                let page_id = match pages.get(&page) { Some(id) => *id, None => continue };
+                let page_id = pages.get(&page)
+                    .copied()
+                    .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
                 let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
 
                 // Create ExtGState specific for this opacity
                 let gs_id = build_extgstate_dictionary(&mut doc, opacity);
                 let gs_name = format!("YeibGS_{}", (opacity * 100.0) as i32);
-                let _ = insert_resource_in_page(&mut doc, page_id, "ExtGState", &gs_name, gs_id);
+                insert_resource_in_page(&mut doc, page_id, "ExtGState", &gs_name, gs_id)
+                    .map_err(|e| format!("Error registrando resaltado en página {page}: {e}"))?;
 
                 let (r, g, b) = parse_hex_color(&color);
 
@@ -354,7 +406,8 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
                 }
 
                 ops.push(Operation::new("Q", vec![]));
-                let _ = append_content_stream(&mut doc, page_id, ops);
+                append_content_stream(&mut doc, page_id, ops)
+                    .map_err(|e| format!("Error agregando resaltado a página {page}: {e}"))?;
             }
         }
     }
