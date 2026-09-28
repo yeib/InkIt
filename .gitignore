@@ -39,3 +39,4 @@ store-assets/
 *.msix
 *.appx
 src-tauri/gen/windows/out/
+*.py
