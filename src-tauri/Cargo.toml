@@ -3,7 +3,6 @@ name = "inkit"
 version = "1.0.0"
 description = "InkIt - Yeib Ecosystem"
 authors = ["Yeib"]
-license = ""
 repository = "https://github.com/yeib/InkIt"
 edition = "2021"
 rust-version = "1.77.2"
@@ -34,4 +33,5 @@ time = "0.3"
 
 
 openssl = "0.10"
+tauri-plugin-shell = "2.3.6"
 

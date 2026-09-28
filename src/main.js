@@ -2,7 +2,8 @@
 console.log("InkIt Inicializado: Yeib Ecosystem");
 
 import { invoke } from '@tauri-apps/api/core';
-import { open, save, message } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { showAlert, showConfirm } from './modules/confirmModal.js';
 import { getVersion } from '@tauri-apps/api/app';
 import { applyTranslations, setLang, getLang, t } from './modules/translations.js';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -14,6 +15,7 @@ import { globalHistory } from './modules/history.js';
 import { getGlobalState, restoreGlobalState } from './modules/state.js';
 import { initPdfViewer, loadDocument } from "./core/pdfViewer.js";
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { setupWindowControls, setupDragAndDrop } from './ui/windowControls.js';
 
 // Setup language early
 const langSelect = document.getElementById('setting-language');
@@ -49,10 +51,10 @@ document.getElementById('btn-about-close').addEventListener('click', () => {
 
 let currentPdfPath = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initApp() {
     const appWindow = getCurrentWindow();
     
-    const { setupWindowControls } = await import('./ui/windowControls.js');
+
     setupWindowControls(appWindow);
 
     // Configurar Hamburger Menu
@@ -80,13 +82,45 @@ document.addEventListener('DOMContentLoaded', async () => {
             await savePdf(currentPdfPath);
         });
 
+        
+        document.getElementById('btn-open-workspace')?.addEventListener('click', async () => {
+            try {
+                const { documentDir, join } = await import('@tauri-apps/api/path');
+                const { mkdir } = await import('@tauri-apps/plugin-fs');
+                const { invoke } = await import('@tauri-apps/api/core');
+                const docsPath = await documentDir();
+                const inkitFolder = await join(docsPath, 'InkIt');
+                await mkdir(inkitFolder, { recursive: true });
+                await invoke('open_file', { path: inkitFolder });
+            } catch (err) {
+                console.error("Error opening workspace:", err);
+            }
+        });
+
         document.getElementById('btn-quick-save')?.addEventListener('click', async () => {
             const { savePdf } = await import('./core/pdfExport.js');
             await savePdf(currentPdfPath);
         });
 
-        document.getElementById('menu-print')?.addEventListener('click', () => {
+        document.addEventListener('keydown', async (e) => {
+        if (e.ctrlKey && e.key.toLowerCase() === 'p') {
+            e.preventDefault();
+            if (!currentPdfPath) {
+                const { showAlert } = await import('./modules/confirmModal.js');
+                await showAlert(window.t ? window.t('alert.title.attention') : 'Attention', window.t ? window.t('alert.open_first') : 'Open a document first', 'warning');
+                return;
+            }
+            window.print();
+        }
+    });
+    
+    document.getElementById('menu-print')?.addEventListener('click', async () => {
             mainMenuDropdown.style.display = 'none';
+            if (!currentPdfPath) {
+                const { showAlert } = await import('./modules/confirmModal.js');
+                await showAlert(window.t ? window.t('alert.title.attention') : 'Attention', window.t ? window.t('alert.open_first') : 'Open a document first', 'warning');
+                return;
+            }
             window.print();
         });
         
@@ -216,7 +250,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnOpenPdf.addEventListener('click', async () => {
         const mainMenuDropdown = document.getElementById('main-menu-dropdown');
         if (mainMenuDropdown) mainMenuDropdown.style.display = 'none';
-        
+
+        const { isDirty } = await import('./modules/state.js');
+        if (isDirty) {
+            const { showConfirm } = await import('./modules/confirmModal.js');
+            const wantsToClose = await showConfirm(
+                window.t ? window.t('alert.title.unsaved') : 'Unsaved changes',
+                window.t ? window.t('alert.unsaved_close_doc') : 'You have unsaved changes. Are you sure you want to open another document?',
+                window.t ? window.t('alert.close_without_saving') : 'Discard',
+                window.t ? window.t('modal.btn.cancel') : 'Cancel'
+            );
+            if (!wantsToClose) return;
+        }
+
         try {
             const selectedPath = await open({
                 multiple: false,
@@ -234,7 +280,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (e) {
             console.error(e);
-            await message(t('alert.error_open'), { title: t('alert.title.error'), kind: 'error' });
+            await showAlert(t('alert.title.error'), t('alert.error_open'), 'error');
         }
     });
 
@@ -245,8 +291,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const { isDirty, setDirty } = await import('./modules/state.js');
             if (isDirty) {
-                const { confirm } = await import('@tauri-apps/plugin-dialog');
-                const wantsToClose = await confirm('Hay cambios sin guardar. ¿Seguro que deseas cerrar el documento y perder los cambios?', { title: 'InkIt - Cerrar Documento', kind: 'warning' });
+                const { showConfirm } = await import('./modules/confirmModal.js');
+                const wantsToClose = await showConfirm(
+                    t('alert.title.unsaved'),
+                    t('alert.unsaved_close_doc'),
+                    t('alert.close_without_saving'),
+                    t('modal.btn.cancel')
+                );
                 if (!wantsToClose) return;
             }
             
@@ -258,8 +309,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    const { setupDragAndDrop } = await import('./ui/windowControls.js');
+
     setupDragAndDrop(appWindow, async (path, uint8Array) => {
+        const { isDirty } = await import('./modules/state.js');
+        if (isDirty) {
+            const { showConfirm } = await import('./modules/confirmModal.js');
+            const wantsToClose = await showConfirm(
+                window.t ? window.t('alert.title.unsaved') : 'Unsaved changes',
+                window.t ? window.t('alert.unsaved_close_doc') : 'You have unsaved changes. Are you sure you want to open another document?',
+                window.t ? window.t('alert.close_without_saving') : 'Discard',
+                window.t ? window.t('modal.btn.cancel') : 'Cancel'
+            );
+            if (!wantsToClose) return;
+        }
+
         currentPdfPath = path;
         if (btnClosePdf) btnClosePdf.style.display = 'block';
         await loadDocument(uint8Array);
@@ -279,5 +342,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
         console.error("Error al cargar PDF inicial:", e);
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+
+
 

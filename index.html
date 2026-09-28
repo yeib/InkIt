@@ -46,7 +46,7 @@
         <div class="toolbar-left" data-tauri-drag-region style="flex-grow: 1; display: flex; align-items: center; height: 100%; gap: 12px;">
           <!-- Menú Hamburguesa -->
           <div class="menu-dropdown-container">
-            <button class="btn-icon" id="btn-main-menu" title="Menú Principal">
+            <button class="btn-icon" id="btn-main-menu" title="Main Menu" data-i18n-title="title.main_menu">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
                 <path d="M3 12h18M3 6h18M3 18h18" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -65,19 +65,42 @@
           <span class="app-title" data-tauri-drag-region style="display: flex; align-items: center;">
             <img src="/InkIt_Logo.png" style="width: 14px; height: 14px; margin-right: 6px; border-radius: 2px;" alt="Logo" /> InkIt 
             <a href="https://yeib.cl" target="_blank" data-i18n="app.by" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
+              <button id="btn-open-workspace" class="btn-icon" style="margin-left: 12px; width: 26px; height: 26px; border-radius: 6px;" title="Open InkIt Folder" data-i18n-title="btn.workspace">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </button>
             <button id="btn-quick-save" class="btn-glass" style="display: none; margin-left: 12px; background: rgba(46, 204, 113, 0.2); border: 1px solid rgba(46, 204, 113, 0.5); color: #2ecc71; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-              💾 <span data-i18n="btn.save_changes">Guardar</span>
+              💾 <span data-i18n="btn.save_changes">Save changes</span>
             </button>
           </span>
         </div>
-        <div class="toolbar-center" data-tauri-drag-region style="display: flex; gap: 4px; align-items: center; margin-right: 64px;">
-          <button class="btn-icon" id="btn-undo" title="Deshacer (Ctrl+Z)" disabled>
+        <div class="toolbar-center" data-tauri-drag-region style="display: flex; gap: 4px; align-items: center; margin-right: 120px;">
+          <div class="history-control">
+          <button class="btn-icon" id="btn-undo" title="Undo (Ctrl+Z)" data-i18n-title="title.undo" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M3 10h10a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5H9M3 10l5 5M3 10l5-5"/></svg>
           </button>
-          <button class="btn-icon" id="btn-redo" title="Rehacer (Ctrl+Y)" disabled>
+          <button class="btn-icon history-dropdown-toggle" id="btn-undo-history" aria-label="Undo history" data-i18n-title="history.undo" aria-expanded="false" disabled>
+            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 4 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <div class="glass-panel history-dropdown" id="undo-history-menu" role="menu" style="display: none;"></div>
+          </div>
+          <div class="history-control">
+          <button class="btn-icon" id="btn-redo" title="Redo (Ctrl+Y)" data-i18n-title="title.redo" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M21 10H11a5 5 0 0 0-5 5v2a5 5 0 0 0 5 5h4M21 10l-5 5M21 10l-5-5"/></svg>
           </button>
+          <button class="btn-icon history-dropdown-toggle" id="btn-redo-history" aria-label="Redo history" data-i18n-title="history.redo" aria-expanded="false" disabled>
+            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 4 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <div class="glass-panel history-dropdown" id="redo-history-menu" role="menu" style="display: none;"></div>
+          </div>
           <div class="divider" style="margin: 0 8px;"></div>
+          <button class="btn-icon" id="btn-dark-mode" data-i18n-title="settings.dark_mode_toggle" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width: 18px; height: 18px;">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 3a9 9 0 0 1 0 18z"></path>
+            </svg>
+          </button>
           <button class="btn-glass primary" id="btn-pointer" data-i18n="btn.pointer">🖱️ Select</button>
           <button class="btn-glass" id="btn-typewriter" data-i18n="btn.typewriter">🔤 Text</button>
           <button class="btn-glass" id="btn-highlight" data-i18n="btn.highlight">🖍️ Highlight</button>
@@ -262,16 +285,27 @@
     </div>
 
     <!-- Menú Contextual Personalizado para Firmas -->
-    <div id="sig-context-menu" class="glass-panel" style="display: none; position: absolute; z-index: 10000; flex-direction: column; padding: 4px; gap: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+    <div id="sig-context-menu" class="glass-panel" style="display: none; position: absolute; z-index: 10000; flex-direction: column; padding: 4px; gap: 2px;">
       <button class="dropdown-item" id="sig-ctx-s" data-i18n="ctx.size.s">Small Size (S)</button>
       <button class="dropdown-item" id="sig-ctx-m" data-i18n="ctx.size.m">Medium Size (M)</button>
-      <button class="dropdown-item" id="sig-ctx-l" data-i18n="ctx.size.l">Pie de página (Full Width)</button>
+      <button class="dropdown-item" id="sig-ctx-l" data-i18n="ctx.size.l">Large Size (L)</button>
+      <div id="sig-ctx-opacity-container" style="display: flex; flex-direction: column; padding: 6px 8px; gap: 6px;">
+        <span data-i18n="ctx.opacity" style="color: #f39c12; font-size: 13px; text-align: left;">&#127183; Opacity (Watermark)</span>
+        <div style="display: flex; gap: 4px; justify-content: space-between;">
+            <button id="btn-op-100" class="btn-glass" style="flex: 1; padding: 2px 0; font-size: 12px; border-radius: 4px;">100%</button>
+            <button id="btn-op-85" class="btn-glass" style="flex: 1; padding: 2px 0; font-size: 12px; border-radius: 4px;">85%</button>
+            <button id="btn-op-60" class="btn-glass" style="flex: 1; padding: 2px 0; font-size: 12px; border-radius: 4px;">60%</button>
+            <button id="btn-op-30" class="btn-glass" style="flex: 1; padding: 2px 0; font-size: 12px; border-radius: 4px;">30%</button>
+        </div>
+      </div>
       <div class="divider" style="margin: 4px 0; background: rgba(255,255,255,0.1);"></div>
-      <button class="dropdown-item" id="sig-ctx-all-pages" style="color: #61dafb;">📄 En todas las hojas</button>
-      <button class="dropdown-item" id="sig-ctx-delete" data-i18n="ctx.delete" style="color: #ff6b6b;">🗑️ Eliminar Firma</button>
+      <button class="dropdown-item" id="sig-ctx-all-pages" data-i18n="ctx.all_pages" style="color: #61dafb;">📄 On all pages</button>
+      <button class="btn-glass" id="sig-ctx-link" style="display: none; width: 100%;"></button>
+      <button class="dropdown-item" id="sig-ctx-delete" data-i18n="ctx.delete" style="color: #ff6b6b;">❌ Delete Signature</button>
     </div>
     
     <script type="module" src="/src/main.js"></script>
     <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;"></div>
   </body>
 </html>
+

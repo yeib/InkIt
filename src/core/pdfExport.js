@@ -1,10 +1,21 @@
+
+function triggerWorkspacePulse() {
+    const wsBtn = document.getElementById('btn-open-workspace');
+    if (wsBtn) {
+        wsBtn.classList.remove('pulse-success');
+        void wsBtn.offsetWidth; // trigger reflow
+        wsBtn.classList.add('pulse-success');
+    }
+}
 import { invoke } from '@tauri-apps/api/core';
-import { save, message } from '@tauri-apps/plugin-dialog';
+import { save } from '@tauri-apps/plugin-dialog';
 import { t } from '../modules/translations.js';
+import { showAlert } from '../modules/confirmModal.js';
+
 
 export async function savePdf(currentPdfPath) {
     if (!currentPdfPath) {
-        await message(t('alert.open_first'), { title: 'InkIt', kind: 'warning' });
+        await showAlert('InkIt', t('alert.open_first'), 'warning');
         return;
     }
 
@@ -35,7 +46,8 @@ export async function savePdf(currentPdfPath) {
                     y: imgAnno.y,
                     width: imgAnno.width,
                     height: imgAnno.height,
-                    base64_data: imgAnno.dataUrl
+                    base64_data: imgAnno.dataUrl,
+                    opacity: imgAnno.opacity !== undefined ? imgAnno.opacity : 1.0
                 });
             }
 
@@ -101,14 +113,17 @@ export async function savePdf(currentPdfPath) {
             await invoke('flatten_pdf', { recipe });
             
             const { setDirty } = await import('../modules/state.js');
+            const { globalHistory } = await import('../modules/history.js');
             setDirty(false);
+            globalHistory.markSaved();
             
             // Show toast instead of blocking dialog
             showToast(t('alert.saved') || 'Documento guardado', targetPath);
+            triggerWorkspacePulse();
         }
     } catch (error) {
         console.error('Error guardando PDF:', error);
-        await message(t('alert.error_save') + error, { title: t('alert.title.error'), kind: 'error' });
+        await showAlert(t('alert.title.error'), t('alert.error_save') + error, 'error');
     }
 }
 
@@ -157,35 +172,84 @@ function showToast(msg, path) {
 
 export async function exportPng(currentPdfPath) {
     if (!currentPdfPath) {
-        await message(t('alert.open_first_export'), { title: t('alert.title.attention'), kind: 'warning' });
+        await showAlert(window.t ? window.t('alert.title.attention') : 'Attention', window.t ? window.t('alert.open_first_export') : 'Open a document first', 'warning');
         return;
     }
 
     try {
-        // Obtener el módulo de visor para llamar a nuestra nueva función
-        const { exportCurrentPageAsPng } = await import('./pdfViewer.js');
-        const base64Data = await exportCurrentPageAsPng();
+        const { exportPageAsPng, getCurrentVisiblePageNum, getTotalPages } = await import('./pdfViewer.js');
+        const { showExportPngModal } = await import('../modules/exportPngModal.js');
+        const { showAlert } = await import('../modules/confirmModal.js');
+        
+        const currentPage = getCurrentVisiblePageNum();
+        const totalPages = getTotalPages();
+        
+        const selection = await showExportPngModal(currentPage, totalPages);
+        if (!selection) return; // User canceled
 
-        const targetPath = await save({
-            filters: [{ name: 'PNG Image', extensions: ['png'] }],
-            defaultPath: currentPdfPath.replace('.pdf', '_page.png')
-        });
+        const { documentDir, join, basename } = await import('@tauri-apps/api/path');
+        const { mkdir, writeFile } = await import('@tauri-apps/plugin-fs');
+        const { open } = await import('@tauri-apps/plugin-shell');
 
-        if (targetPath) {
+        const originalName = await basename(currentPdfPath);
+        const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
+        
+        const docsPath = await documentDir();
+        const pngsFolder = await join(docsPath, 'InkIt', 'PNGs', nameWithoutExt);
+        await mkdir(pngsFolder, { recursive: true });
+
+        // Parse pages
+        let pagesToExport = [];
+        if (selection.mode === 'current') {
+            pagesToExport.push(currentPage);
+        } else if (selection.mode === 'all') {
+            for (let i = 1; i <= totalPages; i++) pagesToExport.push(i);
+        } else if (selection.mode === 'range') {
+            const parts = selection.range.split(',');
+            for (const part of parts) {
+                const rangeParts = part.split('-').map(s => parseInt(s.trim()));
+                if (rangeParts.length === 1 && !isNaN(rangeParts[0])) {
+                    pagesToExport.push(rangeParts[0]);
+                } else if (rangeParts.length === 2 && !isNaN(rangeParts[0]) && !isNaN(rangeParts[1])) {
+                    for (let i = rangeParts[0]; i <= rangeParts[1]; i++) {
+                        pagesToExport.push(i);
+                    }
+                }
+            }
+            pagesToExport = pagesToExport.filter(p => p >= 1 && p <= totalPages);
+            pagesToExport = [...new Set(pagesToExport)]; 
+        }
+
+        if (pagesToExport.length === 0) {
+            await showAlert('Error', 'Invalid page range.', 'error');
+            return;
+        }
+
+        const now = new Date();
+        const timeSuffix = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+
+        for (const pageNum of pagesToExport) {
+            const base64Data = await exportPageAsPng(pageNum);
+            const fileName = `${nameWithoutExt}_Page_${pageNum}_${timeSuffix}.png`;
+            const filePath = await join(pngsFolder, fileName);
+            
             const binaryString = window.atob(base64Data);
             const len = binaryString.length;
             const bytes = new Uint8Array(len);
             for (let i = 0; i < len; i++) {
                 bytes[i] = binaryString.charCodeAt(i);
             }
-            
-            // Usamos Rust para guardar y evitar permisos
-            await invoke('save_file', { path: targetPath, contents: Array.from(bytes) });
-            await message(t('alert.exported'), { title: 'InkIt', kind: 'info' });
+            await invoke('save_file', { path: filePath, contents: Array.from(bytes) });
         }
+
+        showToast(window.t ? window.t('alert.saved') : 'Documento guardado', pngsFolder);
+        triggerWorkspacePulse();
+        
     } catch (error) {
-        console.error('Error exportando:', error);
-        await message(t('alert.error_export') + error.message, { title: t('alert.title.error'), kind: 'error' });
+        console.error('Error exportando PNG:', error);
+        const { showAlert } = await import('../modules/confirmModal.js');
+        await showAlert(window.t ? window.t('alert.title.error') : 'Error', error.toString(), 'error');
     }
 }
+
 

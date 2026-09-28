@@ -1,6 +1,7 @@
-import { message } from '@tauri-apps/plugin-dialog';
+import { showAlert, showConfirm } from '../modules/confirmModal.js';
 import { invoke } from '@tauri-apps/api/core';
 import { t } from '../modules/translations.js';
+import { getIsDirty } from '../modules/state.js';
 
 export function setupWindowControls(appWindow) {
     document.getElementById('titlebar-minimize')?.addEventListener('click', () => appWindow.minimize());
@@ -23,27 +24,34 @@ export function setupWindowControls(appWindow) {
     
     appWindow.onResized(updateMaxIcon);
 
+    const confirmExit = async () => {
+        return await showConfirm(
+            t('alert.title.unsaved'),
+            t('alert.unsaved_exit_app'),
+            t('alert.exit_without_saving'),
+            t('modal.btn.cancel')
+        );
+    };
+
     const handleClose = async () => {
-        const { isDirty } = await import("../modules/state.js");
-        if (isDirty) {
-            const wantsToClose = await showCustomConfirm();
+        if (getIsDirty()) {
+            const wantsToClose = await confirmExit();
             if (wantsToClose) {
-                appWindow.destroy();
+                await appWindow.destroy();
             }
         } else {
-            appWindow.close();
+            await appWindow.destroy();
         }
     };
 
     document.getElementById("titlebar-close")?.addEventListener("click", handleClose);
 
     appWindow.onCloseRequested(async (event) => {
-        const { isDirty } = await import("../modules/state.js");
-        if (isDirty) {
+        if (getIsDirty()) {
             event.preventDefault();
-            const wantsToClose = await showCustomConfirm();
+            const wantsToClose = await confirmExit();
             if (wantsToClose) {
-                appWindow.destroy();
+                await appWindow.destroy();
             }
         }
     });
@@ -62,49 +70,6 @@ export function setupWindowControls(appWindow) {
     });
 }
 
-function showCustomConfirm() {
-    return new Promise((resolve) => {
-        const overlay = document.createElement("div");
-        overlay.className = "modal-overlay";
-        overlay.style.display = "flex";
-        overlay.style.zIndex = "99999";
-
-        const content = document.createElement("div");
-        content.className = "modal-content glass-panel";
-        content.style.minWidth = "350px";
-        content.style.textAlign = "center";
-
-        const isEn = document.documentElement.lang === "en" || document.documentElement.lang === "en-US";
-        const title = isEn ? "⚠️ Unsaved Changes" : "⚠️ Cambios sin guardar";
-        const msg = isEn 
-            ? "You have unsaved changes. Are you sure you want to exit and lose them?" 
-            : "Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?";
-        const btnCancelText = isEn ? "Cancel" : "Cancelar";
-        const btnQuitText = isEn ? "Exit without saving" : "Salir sin guardar";
-
-        content.innerHTML = `
-            <h3>${title}</h3>
-            <p style="margin: 16px 0; color: rgba(255,255,255,0.8); font-size: 14px;">${msg}</p>
-            <div class="modal-actions" style="margin-top: 24px; justify-content: space-around;">
-                <button class="btn-glass" id="btn-custom-cancel">${btnCancelText}</button>
-                <button class="btn-glass primary" id="btn-custom-quit" style="background: rgba(255, 107, 107, 0.2); border: 1px solid rgba(255, 107, 107, 0.5); color: #ff6b6b;">${btnQuitText}</button>
-            </div>
-        `;
-
-        overlay.appendChild(content);
-        document.body.appendChild(overlay);
-
-        document.getElementById("btn-custom-cancel").onclick = () => {
-            overlay.remove();
-            resolve(false);
-        };
-        
-        document.getElementById("btn-custom-quit").onclick = () => {
-            overlay.remove();
-            resolve(true);
-        };
-    });
-}
 
 export function setupDragAndDrop(appWindow, onFileLoaded) {
     // Handle Drag & Drop with Tauri v2
@@ -122,10 +87,10 @@ export function setupDragAndDrop(appWindow, onFileLoaded) {
                             onFileLoaded(selectedPath, uint8Array);
                         } catch (e) {
                             console.error("Error loading dropped PDF:", e);
-                            await message(t('alert.error_open'), { title: t('alert.title.error'), kind: 'error' });
+                            await showAlert(t('alert.title.error'), t('alert.error_open'), 'error');
                         }
                     } else {
-                        await message("Only PDF files are supported.", { title: "InkIt", kind: 'warning' });
+                        await showAlert('InkIt', t('alert.only_pdf'), 'warning');
                     }
                 }
             }
@@ -158,3 +123,5 @@ export function setupDragAndDrop(appWindow, onFileLoaded) {
     window.addEventListener('dragover', handleDragOver);
     window.addEventListener('drop', handleDrop);
 }
+
+

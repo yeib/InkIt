@@ -75,17 +75,22 @@ export function createVaultItem(itemData, index, storageKey) {
 
         signBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const password = await promptPassword('Contraseña del certificado', 'Ingresa la contraseña de este certificado');
+            const password = await promptPassword(t('modal.pfx.title'), t('modal.pfx.hint_vault'));
             if (password === null) return;
 
             const stateModule = await import('../../modules/state.js');
             const pdfViewer = await import('../../core/pdfViewer.js');
             const { savePdf } = await import('../../core/pdfExport.js');
             const { invoke } = await import('@tauri-apps/api/core');
-            const { message } = await import('@tauri-apps/plugin-dialog');
-
+            
             if (stateModule.isDirty) {
-                const wantsToSave = window.confirm('Hay cambios sin guardar. Se guardarán antes de firmar. ¿Continuar?');
+                const { showConfirm } = await import('../confirmModal.js');
+                const wantsToSave = await showConfirm(
+                    t('alert.title.unsaved'),
+                    t('alert.unsaved_sign'),
+                    t('alert.btn_continue'),
+                    t('modal.btn.cancel')
+                );
                 if (!wantsToSave) return;
                 await savePdf(pdfViewer.currentPdfPath);
             }
@@ -93,7 +98,8 @@ export function createVaultItem(itemData, index, storageKey) {
             // Flujo de firma + exportación compartido con el botón de la
             // toolbar (identity.js) — antes este bloque estaba duplicado
             // aquí con solo el origen de pfxPath/password como diferencia.
-            await signAndExport({ invoke, message, pdfViewer, pfxPath, password });
+            const { showAlert: _va } = await import('../confirmModal.js');
+            await signAndExport({ invoke, showAlert: _va, pdfViewer, pfxPath, password });
         });
         item.appendChild(signBtn);
     }
@@ -101,6 +107,7 @@ export function createVaultItem(itemData, index, storageKey) {
     item.addEventListener('click', () => {
         state.selectedSignatureBase64 = dataUrl;
         state.selectedSignatureItemData = typeof itemData === 'string' ? { dataUrl: itemData } : itemData;
+        state.selectedSignatureItemData.type = storageKey === 'inkit_esigns' ? 'esign' : 'stamp';
         state.isStampingMode = true;
         state.pdfContainer.style.cursor = 'crosshair';
         document.getElementById('stamp-vault').style.display = 'none';
@@ -111,7 +118,7 @@ export function createVaultItem(itemData, index, storageKey) {
 }
 
 export async function importSignature() {
-    const { open, message } = await import('@tauri-apps/plugin-dialog');
+    const { open } = await import('@tauri-apps/plugin-dialog');
     const { invoke } = await import('@tauri-apps/api/core');
 
     try {
@@ -162,8 +169,8 @@ export async function importSignature() {
         console.error('Error al importar firma:', e);
         const alertMsg = t('alert.error_import') || 'Error al importar firma.';
         const alertTitle = t('alert.title.error') || 'Error';
-        const { message } = await import('@tauri-apps/plugin-dialog');
-        await message(alertMsg, { title: alertTitle, kind: 'error' });
+        const { showAlert: _sa } = await import('../confirmModal.js');
+        await _sa(alertTitle, alertMsg, 'error');
     }
 }
 
@@ -174,3 +181,6 @@ export function saveSignature() {
     localStorage.setItem('inkit_stamps', JSON.stringify(saved));
     renderVaults();
 }
+
+
+

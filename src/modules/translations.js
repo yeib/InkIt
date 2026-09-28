@@ -5,18 +5,32 @@ export const translations = {
     "about.portfolio": "Portfolio:",
     "about.title": "ℹ️ About InkIt",
     "about.version": "Version:",
+    "alert.btn_continue": "Continue",
+    "alert.close_without_saving": "Close without saving",
+    "alert.error_create_cert": "Error creating certificate: ",
     "alert.error_export": "Error exporting: ",
     "alert.error_import": "There was an error importing the image.",
     "alert.error_open": "There was an error opening the document.",
     "alert.error_save": "Error saving: ",
+    "alert.error_sign": "Error while signing: ",
+    "alert.exit_without_saving": "Exit without saving",
     "alert.exported": "Page exported successfully as PNG.",
+    "alert.only_pdf": "Only PDF files are supported.",
     "alert.open_first": "Open a PDF first before saving.",
     "alert.open_first_export": "Open a PDF first to export.",
+    "alert.open_first_sign": "Open a PDF first.",
     "alert.saved": "PDF Saved successfully!",
+    "alert.signed_saved": "Document signed and saved at:",
     "alert.title.attention": "Attention",
     "alert.title.error": "Error",
+    "alert.title.unsaved": "Unsaved Changes",
+    "alert.unsaved_close_doc": "There are unsaved changes. Are you sure you want to close the document and lose your changes?",
+    "alert.unsaved_exit_app": "You have unsaved changes. Are you sure you want to exit and lose them?",
+    "alert.unsaved_sign": "There are unsaved changes. They will be saved before signing. Continue?",
     "app.by": "by Yeib",
+    "btn.cancel": "Cancel",
     "btn.esign": "✒️ e-Sign",
+    "btn.export": "Export",
     "btn.highlight": "🖍️ Highlight",
     "btn.open": "Open PDF",
     "btn.pointer": "🖱️ Select",
@@ -24,11 +38,36 @@ export const translations = {
     "btn.sign": "🖋️ Sign",
     "btn.stamp": "🪪 Stamp",
     "btn.typewriter": "🔤 Text",
+    "btn.workspace": "Local Files",
+    "btn.workspace_title": "Open InkIt Folder",
+    "ctx.all_pages": "📄 On all pages",
     "ctx.delete": "❌ Delete Signature",
     "ctx.img_title": "Right click to resize or delete.",
+    "ctx.link_master": "Link to Master",
+    "ctx.opacity": "🎴 Opacity (Watermark)",
     "ctx.size.l": "Large Size (L)",
     "ctx.size.m": "Medium Size (M)",
     "ctx.size.s": "Small Size (S)",
+    "ctx.unlink": "Unlink",
+    "export.png.all": "All Pages",
+    "export.png.all.desc": "Will be saved in a new folder",
+    "export.png.current": "Current Page",
+    "export.png.desc": "Select which pages you want to export as images.",
+    "export.png.range": "Custom Range",
+    "export.png.title": "Export as PNG",
+    "history.change": "Change",
+    "history.highlight_added": "Highlight added",
+    "history.highlight_changed": "Highlight changed",
+    "history.highlight_removed": "Highlight removed",
+    "history.initial": "Original document",
+    "history.redo": "Redo history",
+    "history.stamp_added": "Stamp added",
+    "history.stamp_changed": "Stamp changed",
+    "history.stamp_removed": "Stamp removed",
+    "history.text_added": "Text added",
+    "history.text_changed": "Text changed",
+    "history.text_removed": "Text removed",
+    "history.undo": "Undo history",
     "hl.color": "Color:",
     "menu.about": "ℹ️ About",
     "menu.close_pdf": "❌ Close PDF",
@@ -39,9 +78,20 @@ export const translations = {
     "modal.btn.cancel": "Cancel",
     "modal.btn.clear": "Clear",
     "modal.btn.close": "Close",
+    "modal.btn.confirm": "Confirm",
     "modal.btn.generate": "Generate Identity",
     "modal.btn.import": "Import",
+    "modal.btn.ok": "OK",
     "modal.btn.save": "Save",
+    "modal.pfx.hint": "Enter the password for this .pfx file.",
+    "modal.pfx.hint_vault": "Enter the password for this certificate.",
+    "modal.pfx.title": "Certificate Password",
+    "modal.pfx_new.hint": "Choose a password for your new identity. You will need it every time you sign with it — if you forget it, there is no way to recover the certificate.",
+    "modal.pfx_new.title": "Digital Certificate (.pfx)",
+    "modal.pw.empty": "Password cannot be empty.",
+    "modal.pw.mismatch": "Passwords do not match.",
+    "modal.pw.password": "Password",
+    "modal.pw.repeat": "Repeat password",
     "modal.sig.title": "Draw your signature",
     "modal.stamp.desc": "Enter your details to generate a digital identity.",
     "modal.stamp.detail": "E-mail (Optional)",
@@ -51,13 +101,20 @@ export const translations = {
     "pdf.empty": "Drag & Drop a PDF document or click \"Open PDF\"",
     "settings.auto_flatten": "Merge signatures permanently on save",
     "settings.dark_mode": "Force Dark Mode PDF (Invert colors)",
+    "settings.dark_mode_toggle": "Toggle PDF color inversion",
     "settings.high_quality": "High quality rendering (slower)",
     "settings.lang": "Language (Idioma)",
     "settings.title": "⚙️ InkIt Settings",
     "stamp.date": "Date",
     "stamp.date_label": "Date:",
+    "stamp.footer_date_label": "Date:",
+    "stamp.footer_verified": "Identity verified by public key cryptography",
     "stamp.signed_by": "Digitally signed by:",
+    "stamp.signed_by_electronic": "Electronically signed by:",
     "stamp.verified": "Verified",
+    "title.main_menu": "Main Menu",
+    "title.redo": "Redo (Ctrl+Y)",
+    "title.undo": "Undo (Ctrl+Z)",
     "tw.bg.black": "Black BG",
     "tw.bg.gray": "Gray BG",
     "tw.bg.transparent": "Transparent BG",
@@ -79,18 +136,32 @@ export const translations = {
     "about.portfolio": "Portafolio:",
     "about.title": "ℹ️ Acerca de InkIt",
     "about.version": "Versión:",
+    "alert.btn_continue": "Continuar",
+    "alert.close_without_saving": "Cerrar sin guardar",
+    "alert.error_create_cert": "Error creando el certificado: ",
     "alert.error_export": "Error al exportar: ",
     "alert.error_import": "Hubo un error importando la imagen.",
     "alert.error_open": "Hubo un error al abrir el documento.",
     "alert.error_save": "Error al guardar: ",
+    "alert.error_sign": "Error al firmar: ",
+    "alert.exit_without_saving": "Salir sin guardar",
     "alert.exported": "Página exportada con éxito como PNG.",
+    "alert.only_pdf": "Solo se admiten archivos PDF.",
     "alert.open_first": "Abre un PDF primero antes de guardar.",
     "alert.open_first_export": "Abre un PDF primero para poder exportar.",
+    "alert.open_first_sign": "Abre un PDF primero.",
     "alert.saved": "PDF Guardado exitosamente!",
+    "alert.signed_saved": "Documento firmado y guardado en:",
     "alert.title.attention": "Atención",
     "alert.title.error": "Error",
+    "alert.title.unsaved": "Cambios sin guardar",
+    "alert.unsaved_close_doc": "Hay cambios sin guardar. ¿Seguro que deseas cerrar el documento y perder los cambios?",
+    "alert.unsaved_exit_app": "Hay cambios sin guardar. ¿Seguro que deseas salir y perder los cambios?",
+    "alert.unsaved_sign": "Hay cambios sin guardar. Se guardarán antes de firmar. ¿Continuar?",
     "app.by": "por Yeib",
+    "btn.cancel": "Cancelar",
     "btn.esign": "✒️ Firma",
+    "btn.export": "Exportar",
     "btn.highlight": "🖍️ Destacar",
     "btn.open": "Abrir PDF",
     "btn.pointer": "🖱️ Seleccionar",
@@ -98,11 +169,36 @@ export const translations = {
     "btn.sign": "🖋️ Firmar",
     "btn.stamp": "🪪 Sello",
     "btn.typewriter": "🔤 Texto",
+    "btn.workspace": "Archivos Locales",
+    "btn.workspace_title": "Abrir carpeta de InkIt",
+    "ctx.all_pages": "📄 En todas las hojas",
     "ctx.delete": "❌ Eliminar Firma",
     "ctx.img_title": "Clic derecho para cambiar tamaño o eliminar.",
+    "ctx.link_master": "Vincular al maestro",
+    "ctx.opacity": "🎴 Opacidad (Marca de agua)",
     "ctx.size.l": "Tamaño Grande (L)",
     "ctx.size.m": "Tamaño Mediano (M)",
     "ctx.size.s": "Tamaño Pequeño (S)",
+    "ctx.unlink": "Desvincular",
+    "export.png.all": "Todas las páginas",
+    "export.png.all.desc": "Se guardarán en una carpeta nueva",
+    "export.png.current": "Página actual",
+    "export.png.desc": "Selecciona qué páginas deseas exportar como imágenes.",
+    "export.png.range": "Rango personalizado",
+    "export.png.title": "Exportar como PNG",
+    "history.change": "Cambio",
+    "history.highlight_added": "Resaltado agregado",
+    "history.highlight_changed": "Resaltado modificado",
+    "history.highlight_removed": "Resaltado eliminado",
+    "history.initial": "Documento original",
+    "history.redo": "Historial de rehacer",
+    "history.stamp_added": "Estampa agregada",
+    "history.stamp_changed": "Estampa modificada",
+    "history.stamp_removed": "Estampa eliminada",
+    "history.text_added": "Texto agregado",
+    "history.text_changed": "Texto modificado",
+    "history.text_removed": "Texto eliminado",
+    "history.undo": "Historial de deshacer",
     "hl.color": "Color:",
     "menu.about": "ℹ️ Acerca de",
     "menu.close_pdf": "❌ Cerrar PDF",
@@ -113,9 +209,20 @@ export const translations = {
     "modal.btn.cancel": "Cancelar",
     "modal.btn.clear": "Limpiar",
     "modal.btn.close": "Cerrar",
+    "modal.btn.confirm": "Confirmar",
     "modal.btn.generate": "Generar Identidad",
     "modal.btn.import": "Importar",
+    "modal.btn.ok": "Aceptar",
     "modal.btn.save": "Guardar",
+    "modal.pfx.hint": "Ingresa la contraseña de este archivo .pfx.",
+    "modal.pfx.hint_vault": "Ingresa la contraseña de este certificado.",
+    "modal.pfx.title": "Contraseña del Certificado",
+    "modal.pfx_new.hint": "Elige una contraseña para tu nueva identidad. La necesitarás cada vez que firmes con ella — si la olvidas, no hay forma de recuperar el certificado.",
+    "modal.pfx_new.title": "Certificado Digital (.pfx)",
+    "modal.pw.empty": "La contraseña no puede estar vacía.",
+    "modal.pw.mismatch": "Las contraseñas no coinciden.",
+    "modal.pw.password": "Contraseña",
+    "modal.pw.repeat": "Repite la contraseña",
     "modal.sig.title": "Dibuja tu firma",
     "modal.stamp.desc": "Ingresa tus datos para generar una identidad digital.",
     "modal.stamp.detail": "Correo Electrónico (Opcional)",
@@ -125,13 +232,20 @@ export const translations = {
     "pdf.empty": "Arrastra un documento PDF o haz clic en \"Abrir PDF\"",
     "settings.auto_flatten": "Combinar firmas permanentemente al guardar",
     "settings.dark_mode": "Forzar PDF a tema oscuro (Invertir colores)",
+    "settings.dark_mode_toggle": "Alternar inversión de colores del PDF",
     "settings.high_quality": "Renderizado de alta calidad (más lento)",
     "settings.lang": "Language (Idioma)",
     "settings.title": "⚙️ Configuración de InkIt",
     "stamp.date": "Fecha",
     "stamp.date_label": "Fecha:",
+    "stamp.footer_date_label": "Fecha:",
+    "stamp.footer_verified": "Identidad verificada mediante criptografía de clave pública",
     "stamp.signed_by": "Firmado digitalmente por:",
+    "stamp.signed_by_electronic": "Firmado electrónicamente por:",
     "stamp.verified": "Verified",
+    "title.main_menu": "Menú Principal",
+    "title.redo": "Rehacer (Ctrl+Y)",
+    "title.undo": "Deshacer (Ctrl+Z)",
     "tw.bg.black": "Fondo Negro",
     "tw.bg.gray": "Fondo Gris",
     "tw.bg.transparent": "Fondo Transparente",
@@ -149,12 +263,20 @@ export const translations = {
   }
 };
 
-let currentLang = localStorage.getItem('inkit_lang') || 'en';
+let currentLang = (typeof localStorage !== 'undefined' ? localStorage.getItem('inkit_lang') : null) || 'en';
+if (typeof document !== 'undefined') {
+  document.documentElement.lang = currentLang;
+}
 
 export function setLang(lang) {
   if (translations[lang]) {
     currentLang = lang;
-    localStorage.setItem('inkit_lang', lang);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('inkit_lang', lang);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang;
+    }
     applyTranslations();
   }
 }
@@ -164,10 +286,12 @@ export function getLang() {
 }
 
 export function t(key) {
-  return translations[currentLang][key] || key;
+  return translations[currentLang]?.[key] || translations['en']?.[key] || key;
 }
+window.t = t;
 
 export function applyTranslations() {
+  if (typeof document === 'undefined') return;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number')) {
@@ -187,5 +311,9 @@ export function applyTranslations() {
       }
     }
   });
-}
 
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    if (key) el.title = t(key);
+  });
+}

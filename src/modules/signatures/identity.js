@@ -1,6 +1,8 @@
 import { t } from '../translations.js';
 import { renderVaults } from './vault.js';
 import { promptPassword, promptNewPassword } from './passwordModal.js';
+import { showAlert, showConfirm } from '../confirmModal.js';
+
 
 export function setupIdentity() {
     const btnNewIdentity = document.getElementById('btn-new-identity');
@@ -42,7 +44,7 @@ export function setupIdentity() {
  * abierto y pide dónde guardar el resultado.
  */
 async function signCurrentPdfWithPfx() {
-    const { open, message } = await import('@tauri-apps/plugin-dialog');
+    const { open } = await import('@tauri-apps/plugin-dialog');
     const { invoke } = await import('@tauri-apps/api/core');
     const { savePdf } = await import('../../core/pdfExport.js');
 
@@ -52,19 +54,24 @@ async function signCurrentPdfWithPfx() {
     });
     if (!pfxPath) return;
 
-    const password = await promptPassword('Contraseña del certificado', 'Ingresa la contraseña de este archivo .pfx');
+    const password = await promptPassword(t('modal.pfx.title'), t('modal.pfx.hint'));
     if (password === null) return;
 
     const stateModule = await import('../../modules/state.js');
     const pdfViewer = await import('../../core/pdfViewer.js');
 
     if (stateModule.isDirty) {
-        const wantsToSave = window.confirm('Hay cambios sin guardar. Se guardarán antes de firmar. ¿Continuar?');
+        const wantsToSave = await showConfirm(
+            t('alert.title.unsaved'),
+            t('alert.unsaved_sign'),
+            t('alert.btn_continue'),
+            t('modal.btn.cancel')
+        );
         if (!wantsToSave) return;
         await savePdf(pdfViewer.currentPdfPath);
     }
 
-    await signAndExport({ invoke, message, pdfViewer, pfxPath, password });
+    await signAndExport({ invoke, showAlert, pdfViewer, pfxPath, password });
 }
 
 /**
@@ -73,11 +80,12 @@ async function signCurrentPdfWithPfx() {
  * toolbar (signCurrentPdfWithPfx) y el botón 🔐 de cada identidad en la
  * bóveda (vault.js).
  */
-export async function signAndExport({ invoke, message, pdfViewer, pfxPath, password }) {
+export async function signAndExport({ invoke, showAlert: alertFn, pdfViewer, pfxPath, password }) {
+    const notifyAlert = alertFn || showAlert;
     try {
         const currentPath = pdfViewer.currentPdfPath || window.currentPdfPath;
         if (!currentPath) {
-            await message('Abre un PDF primero.', { title: 'InkIt', kind: 'warning' });
+            await notifyAlert('InkIt', t('alert.open_first_sign'), 'warning');
             return;
         }
 
@@ -100,11 +108,11 @@ export async function signAndExport({ invoke, message, pdfViewer, pfxPath, passw
 
         if (targetPath) {
             await invoke('save_file', { path: targetPath, contents: signedBytes });
-            await message(`Documento firmado y guardado en:\n${targetPath}`, { title: 'InkIt', kind: 'info' });
+            await notifyAlert('InkIt', `${t('alert.signed_saved')}\n${targetPath}`, 'info');
         }
     } catch (err) {
         console.error(err);
-        await message('Error al firmar: ' + err, { title: 'InkIt', kind: 'error' });
+        await notifyAlert('InkIt', t('alert.error_sign') + err, 'error');
     }
 }
 
@@ -189,10 +197,10 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
         
         fCtx.fillStyle = '#003399';
         fCtx.font = 'bold 16px Arial';
-        fCtx.fillText(`Firmado electrónicamente por: ${name} ${detail ? '- ' + detail : ''}`, 20, 25);
+        fCtx.fillText(`${t('stamp.signed_by_electronic')} ${name} ${detail ? '- ' + detail : ''}`, 20, 25);
         fCtx.fillStyle = '#333333';
         fCtx.font = '12px Arial';
-        fCtx.fillText(`Fecha: ${dateStr} | Identidad verificada mediante criptografía de clave pública | ${extra}`, 20, 45);
+        fCtx.fillText(`${t('stamp.footer_date_label')} ${dateStr} | ${t('stamp.footer_verified')} | ${extra}`, 20, 45);
         
         // Agregar el logo de InkIt a la derecha con imagen real
         await new Promise((resolve) => {
@@ -215,8 +223,8 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
         // ------------------------------
 
         const password = await promptNewPassword(
-            'Certificado Digital (.pfx)',
-            'Elige una contraseña para tu nueva identidad. La necesitarás cada vez que firmes con ella — si la olvidas, no hay forma de recuperar el certificado.'
+            t('modal.pfx_new.title'),
+            t('modal.pfx_new.hint')
         );
 
         if (password !== null && password.trim() !== '') {
@@ -236,8 +244,7 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
                     saved.push({ dataUrl, pfxPath: outPath, footerDataUrl, name, detail, extra });
                 } catch (e) {
                     console.error(e);
-                    const { message } = await import('@tauri-apps/plugin-dialog');
-                    await message('Error creando el certificado: ' + e, { title: 'InkIt', kind: 'error' });
+                    await showAlert('InkIt', t('alert.error_create_cert') + e, 'error');
                     saved.push({ dataUrl, footerDataUrl, name, detail, extra });
                 }
             } else {
@@ -264,3 +271,6 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
         void finalizeStamp();
     };
 }
+
+
+

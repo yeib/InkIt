@@ -1,8 +1,7 @@
 import { globalHistory } from './history.js';
 import { annotations, setAnnotations, renderAnnotationsForPage } from './typewriter.js';
 import { imageAnnotations, setImageAnnotations, renderImageAnnotationsForPage } from './signatures.js';
-import { highlightAnnotations, setHighlightAnnotations } from "./highlights.js";
-import { renderHighlightsForPage } from "./highlights.js";
+import { highlightAnnotations, setHighlightAnnotations, renderHighlightsForPage } from "./highlights.js";
 
 export function getGlobalState() {
     return {
@@ -14,30 +13,45 @@ export function getGlobalState() {
 
 export function restoreGlobalState(state) {
     if (!state) return;
+
+    // Collect all pages that had annotations before OR have annotations in the new state
+    const affectedPages = new Set([
+        ...annotations.map(a => a.pageNum),
+        ...imageAnnotations.map(a => a.pageNum),
+        ...highlightAnnotations.map(a => a.pageNum),
+        ...(state.annotations || []).map(a => a.pageNum),
+        ...(state.imageAnnotations || []).map(a => a.pageNum),
+        ...(state.highlightAnnotations || []).map(a => a.pageNum)
+    ]);
+
     setAnnotations(state.annotations || []);
     setImageAnnotations(state.imageAnnotations || []);
     setHighlightAnnotations(state.highlightAnnotations || []);
-    
-    // Refresh all pages DOM
-    document.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
-        const pageNum = parseInt(wrapper.dataset.pageNum);
-        const scale = parseFloat(wrapper.dataset.scale);
-        
-        // Limpiar anotaciones actuales del DOM
+
+    // Only update pages that were actually affected
+    affectedPages.forEach(pageNum => {
+        const wrapper = document.querySelector(`.pdf-page-wrapper[data-page-num="${pageNum}"]`);
+        if (!wrapper) return;
+
+        const scale = parseFloat(wrapper.dataset.scale || 1.0);
         wrapper.querySelectorAll('.text-annotation').forEach(el => el.remove());
         wrapper.querySelectorAll('.img-annotation').forEach(el => el.remove());
-        
-        renderAnnotationsForPage(pageNum, wrapper, scale);
+
+        renderAnnotationsForPage(wrapper, pageNum, scale);
         renderImageAnnotationsForPage(wrapper, pageNum, scale);
-        const hlCanvas = wrapper.querySelector(".highlight-canvas");
+
+        const hlCanvas = wrapper.querySelector('.highlight-canvas');
         if (hlCanvas) {
-            hlCanvas.getContext("2d").clearRect(0, 0, hlCanvas.width, hlCanvas.height);
+            hlCanvas.getContext('2d').clearRect(0, 0, hlCanvas.width, hlCanvas.height);
             renderHighlightsForPage(pageNum, hlCanvas, scale);
         }
     });
 }
 
 export let isDirty = false;
+export function getIsDirty() {
+    return isDirty;
+}
 export function setDirty(val) { 
     isDirty = val; 
     const btnSave = document.getElementById('btn-quick-save');
