@@ -2,7 +2,8 @@ import { commitAction } from "./state.js";
 import { state, imageAnnotations, setImageAnnotations } from './signatures/state.js';
 import { setupCanvasDrawing, clearCanvas } from './signatures/drawing.js';
 import { setupIdentity } from './signatures/identity.js';
-import { renderImageAnnotation, renderImageAnnotationsForPage, setupInteractionsMenu } from './signatures/interactions.js';
+import { renderImageAnnotation, renderImageAnnotationsForPage } from './signatures/interactions.js';
+import { setupInteractionsMenu } from './signatures/contextMenu.js';
 import { renderVaults, importSignature, saveSignature } from './signatures/vault.js';
 
 export { imageAnnotations, renderImageAnnotationsForPage, setImageAnnotations };
@@ -164,5 +165,5 @@ export function initSignatures(containerId) {
         img.src = state.selectedSignatureBase64;
     });
 
-    setupInteractionsMenu();
+    setupInteractionsMenu(renderImageAnnotation);
 }

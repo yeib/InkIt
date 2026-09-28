@@ -48,28 +48,36 @@ fn create_pfx(name: String, detail: String, password: String, out_path: String) 
 
 #[tauri::command]
 fn open_file(path: String) -> Result<(), String> {
+    let target = std::path::Path::new(&path);
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
-        std::process::Command::new("explorer")
-            .raw_arg(format!("/select,\"{}\"", path.replace("/", "\\")))
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        let mut command = std::process::Command::new("explorer");
+        if target.is_dir() {
+            command.arg(target);
+        } else {
+            command.raw_arg(format!("/select,\"{}\"", path.replace("/", "\\")));
+        }
+        command.spawn().map_err(|e| e.to_string())?;
     }
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
-            .arg("-R")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        let mut command = std::process::Command::new("open");
+        if !target.is_dir() {
+            command.arg("-R");
+        }
+        command.arg(target).spawn().map_err(|e| e.to_string())?;
     }
     #[cfg(target_os = "linux")]
     {
-        // On linux it is harder to select a file, so we just open its parent directory
-        let parent = std::path::Path::new(&path).parent().unwrap_or(std::path::Path::new(""));
+        // On Linux, reveal files by opening their parent directory.
+        let directory = if target.is_dir() {
+            target
+        } else {
+            target.parent().unwrap_or(std::path::Path::new(""))
+        };
         std::process::Command::new("xdg-open")
-            .arg(parent)
+            .arg(directory)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -96,6 +104,5 @@ pub fn run() {
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
-
 
 

@@ -1,7 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import { renderAnnotationsForPage } from '../modules/typewriter.js';
-import { attachHighlightOverlay } from "../modules/highlights.js";
-import { renderImageAnnotationsForPage } from '../modules/signatures.js';
+import {
+    createPageWrappers,
+    disconnectPageObserver,
+    renderPageContent,
+    schedulePageDimensionUpdate,
+    setupPageObserver
+} from './pdfPageRenderer.js';
+import { renderPageAsPng } from './pdfPageExport.js';
 
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
@@ -11,9 +16,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 let currentPdf = null;
 let currentScale = 1.2;
 let container = null;
-let currentPdfBytes = null;
 let currentLoadingTask = null;
-let pageObserver = null;
 let loadRequestId = 0;
 
 export function getTotalPages() {
@@ -71,42 +74,8 @@ function zoomOut() {
     reRenderDocument();
 }
 
-function setupPageObserver() {
-    if (pageObserver) {
-        pageObserver.disconnect();
-    }
-
-    pageObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const wrapper = entry.target;
-            const pageNum = parseInt(wrapper.dataset.pageNum);
-
-            if (entry.isIntersecting) {
-                if (wrapper.dataset.rendered !== "true" && !wrapper._isRendering) {
-                    renderPageContent(wrapper, pageNum);
-                }
-            } else {
-                // En documentos largos (> 15 páginas), liberar memoria de páginas distantes para que nunca se sature la GPU/RAM
-                if (currentPdf && currentPdf.numPages > 15 && wrapper.dataset.rendered === "true") {
-                    unrenderPageContent(wrapper);
-                }
-            }
-        });
-    }, {
-        root: container,
-        rootMargin: '800px 0px 800px 0px' // Precargar 800px antes de que entre al viewport
-    });
-
-    container.querySelectorAll('.pdf-page-wrapper').forEach(w => {
-        pageObserver.observe(w);
-    });
-}
-
 async function releaseCurrentPdf() {
-    if (pageObserver) {
-        pageObserver.disconnect();
-        pageObserver = null;
-    }
+    disconnectPageObserver();
 
     container?.querySelectorAll('.pdf-page-wrapper').forEach(wrapper => {
         wrapper._renderTask?.cancel();
@@ -117,7 +86,6 @@ async function releaseCurrentPdf() {
     const loadingTask = currentLoadingTask;
     currentPdf = null;
     currentLoadingTask = null;
-    currentPdfBytes = null;
     container?.replaceChildren();
 
     if (loadingTask) {
@@ -133,94 +101,13 @@ async function releaseCurrentPdf() {
     }
 }
 
-async function renderPageContent(wrapper, pageNum) {
-    const pdf = currentPdf;
-    if (!pdf || wrapper.dataset.rendered === "true" || wrapper._isRendering) return;
-    wrapper._isRendering = true;
-
-    try {
-        const page = await pdf.getPage(pageNum);
-        if (pdf !== currentPdf || !wrapper.isConnected) return;
-        const viewport = page.getViewport({ scale: currentScale });
-
-        wrapper.style.width = Math.floor(viewport.width) + "px";
-        wrapper.style.height = Math.floor(viewport.height) + "px";
-
-        let canvas = wrapper.querySelector('canvas:not(.highlight-canvas)');
-        if (!canvas) {
-            canvas = document.createElement('canvas');
-            canvas.style.width = "100%";
-            canvas.style.height = "100%";
-            canvas.style.display = "block";
-            wrapper.prepend(canvas);
-        }
-
-        const savedSettings = JSON.parse(localStorage.getItem('inkit_settings') || '{"highQuality": true}');
-        const outputScale = savedSettings.highQuality ? (window.devicePixelRatio || 1) : 1;
-
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-
-        const context = canvas.getContext('2d');
-        const transform = outputScale !== 1
-            ? [outputScale, 0, 0, outputScale, 0, 0]
-            : null;
-
-        const renderContext = {
-            canvasContext: context,
-            transform: transform,
-            viewport: viewport
-        };
-
-        if (wrapper._renderTask) {
-            try { wrapper._renderTask.cancel(); } catch (e) {}
-        }
-        wrapper._renderTask = page.render(renderContext);
-        await wrapper._renderTask.promise;
-        wrapper._renderTask = null;
-
-        // Dibujar las anotaciones guardadas para esta página
-        renderAnnotationsForPage(wrapper, pageNum, currentScale);
-        renderImageAnnotationsForPage(wrapper, pageNum, currentScale);
-        attachHighlightOverlay(wrapper, pageNum, currentScale);
-
-        wrapper.dataset.rendered = "true";
-    } catch (err) {
-        if (err?.name !== 'RenderingCancelledException') {
-            console.error(`Error rendering page ${pageNum}:`, err);
-        }
-    } finally {
-        wrapper._isRendering = false;
-    }
-}
-
-function unrenderPageContent(wrapper) {
-    if (wrapper._renderTask) {
-        try { wrapper._renderTask.cancel(); } catch (e) {}
-        wrapper._renderTask = null;
-    }
-    const canvas = wrapper.querySelector('canvas:not(.highlight-canvas)');
-    if (canvas) canvas.remove();
-
-    const hlCanvas = wrapper.querySelector('.highlight-canvas');
-    if (hlCanvas) hlCanvas.remove();
-
-    wrapper.querySelectorAll('.text-annotation').forEach(el => el.remove());
-    wrapper.querySelectorAll('.img-annotation').forEach(el => el.remove());
-
-    wrapper.dataset.rendered = "false";
-}
-
 async function reRenderDocument() {
     if (!currentPdf) return;
     
     // Guardar posición de scroll relativa
     const scrollPercent = container.scrollTop / (container.scrollHeight || 1);
     
-    if (pageObserver) {
-        pageObserver.disconnect();
-    }
-
+    disconnectPageObserver();
     container.innerHTML = '';
     const numPages = currentPdf.numPages;
 
@@ -229,48 +116,20 @@ async function reRenderDocument() {
     const defaultW = Math.floor(firstViewport.width);
     const defaultH = Math.floor(firstViewport.height);
 
-    const fragment = document.createDocumentFragment();
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-        const pageWrapper = document.createElement('div');
-        pageWrapper.className = 'pdf-page-wrapper';
-        pageWrapper.style.margin = '0 auto 24px auto';
-        pageWrapper.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-        pageWrapper.style.backgroundColor = 'white';
-        pageWrapper.style.position = 'relative';
-        pageWrapper.style.width = defaultW + "px";
-        pageWrapper.style.height = defaultH + "px";
-        pageWrapper.dataset.pageNum = pageNum;
-        pageWrapper.dataset.scale = currentScale;
-        pageWrapper.dataset.rendered = "false";
-        fragment.appendChild(pageWrapper);
-    }
-    container.appendChild(fragment);
+    createPageWrappers(container, numPages, currentScale, defaultW, defaultH);
 
-    setupPageObserver();
+    setupPageObserver(container, () => currentPdf, () => currentScale);
 
-    // Background pass to fetch exact dimensions of all pages for perfect scrollbar stability
-    const pdf = currentPdf;
-    const reqId = loadRequestId;
-    setTimeout(async () => {
-        if (pdf !== currentPdf || reqId !== loadRequestId) return;
-        const wrappers = Array.from(container.querySelectorAll('.pdf-page-wrapper'));
-        for (let i = 1; i <= numPages; i++) {
-            if (pdf !== currentPdf || reqId !== loadRequestId) break;
-            pdf.getPage(i).then(page => {
-                if (pdf !== currentPdf || reqId !== loadRequestId) return;
-                const vp = page.getViewport({ scale: currentScale });
-                const w = wrappers[i - 1];
-                if (w && w.dataset.rendered === "false") {
-                    w.style.width = Math.floor(vp.width) + "px";
-                    w.style.height = Math.floor(vp.height) + "px";
-                }
-            }).catch(() => {});
-        }
-    }, 0);
+    schedulePageDimensionUpdate(
+        container, currentPdf, numPages,
+        () => currentPdf, () => loadRequestId, () => currentScale
+    );
 
     // Renderizar el primer lote visible en paralelo (igual que en loadDocument)
     const firstBatch = Array.from(container.querySelectorAll('.pdf-page-wrapper')).slice(0, 5);
-    await Promise.all(firstBatch.map(w => renderPageContent(w, parseInt(w.dataset.pageNum))));
+    await Promise.all(firstBatch.map(w =>
+        renderPageContent(w, parseInt(w.dataset.pageNum), () => currentPdf, () => currentScale)
+    ));
 
     // Restaurar scroll (después del primer render real para que scrollHeight sea correcto)
     container.scrollTop = scrollPercent * container.scrollHeight;
@@ -294,7 +153,6 @@ export async function loadDocument(pdfBytes) {
         const { getGlobalState } = await import('../modules/state.js');
         globalHistory.clear(getGlobalState());
 
-        currentPdfBytes = pdfBytes;
         container.innerHTML = '<div class="loading-state"><p>' + (window.t ? window.t('loading') : 'Loading...') + '</p></div>';
         
         currentLoadingTask = pdfjsLib.getDocument({ data: pdfBytes });
@@ -314,50 +172,22 @@ export async function loadDocument(pdfBytes) {
         const defaultH = Math.floor(firstViewport.height);
 
         // Crear esqueletos de página en fragmento (tarda < 5ms incluso para 600 páginas)
-        const fragment = document.createDocumentFragment();
-        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-            const pageWrapper = document.createElement('div');
-            pageWrapper.className = 'pdf-page-wrapper';
-            pageWrapper.style.margin = '0 auto 24px auto';
-            pageWrapper.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-            pageWrapper.style.backgroundColor = 'white';
-            pageWrapper.style.position = 'relative';
-            pageWrapper.style.width = defaultW + "px";
-            pageWrapper.style.height = defaultH + "px";
-            pageWrapper.dataset.pageNum = pageNum;
-            pageWrapper.dataset.scale = currentScale;
-            pageWrapper.dataset.rendered = "false";
-            fragment.appendChild(pageWrapper);
-        }
-        container.appendChild(fragment);
+        createPageWrappers(container, numPages, currentScale, defaultW, defaultH);
 
         // Inicializar observador de renderizado perezoso (SumatraPDF / Virtualized style)
-        setupPageObserver();
+        setupPageObserver(container, () => currentPdf, () => currentScale);
 
-    // Background pass to fetch exact dimensions of all pages for perfect scrollbar stability
-    const pdf = currentPdf;
-    const reqId = loadRequestId;
-    setTimeout(async () => {
-        if (pdf !== currentPdf || reqId !== loadRequestId) return;
-        const wrappers = Array.from(container.querySelectorAll('.pdf-page-wrapper'));
-        for (let i = 1; i <= numPages; i++) {
-            if (pdf !== currentPdf || reqId !== loadRequestId) break;
-            pdf.getPage(i).then(page => {
-                if (pdf !== currentPdf || reqId !== loadRequestId) return;
-                const vp = page.getViewport({ scale: currentScale });
-                const w = wrappers[i - 1];
-                if (w && w.dataset.rendered === "false") {
-                    w.style.width = Math.floor(vp.width) + "px";
-                    w.style.height = Math.floor(vp.height) + "px";
-                }
-            }).catch(() => {});
-        }
-    }, 0);
+        schedulePageDimensionUpdate(
+            container, currentPdf, numPages,
+            () => currentPdf, () => loadRequestId, () => currentScale
+        );
 
     // Renderizar el primer lote visible en paralelo para apariencia instantánea
         // (el IntersectionObserver los capturaría igual, pero de forma secuencial — esto es más rápido)
         const firstBatch = Array.from(container.querySelectorAll('.pdf-page-wrapper')).slice(0, 5);
-        await Promise.all(firstBatch.map(w => renderPageContent(w, parseInt(w.dataset.pageNum))));
+        await Promise.all(firstBatch.map(w =>
+            renderPageContent(w, parseInt(w.dataset.pageNum), () => currentPdf, () => currentScale)
+        ));
         if (requestId !== loadRequestId) return;
 
     } catch (error) {
@@ -399,96 +229,13 @@ export async function exportPageAsPng(pageNum) {
     if (!activeWrapper) throw new Error("Página no encontrada");
 
     const scale = parseFloat(activeWrapper.dataset.scale);
-    const wasRendered = activeWrapper.dataset.rendered === "true";
-    
+
     // Asegurar que esté renderizada
     if (activeWrapper.dataset.rendered !== "true") {
-        await renderPageContent(activeWrapper, pageNum);
+        await renderPageContent(activeWrapper, pageNum, () => currentPdf, () => currentScale);
     }
 
-    // Obtener el canvas original del PDF
-    const origCanvas = activeWrapper.querySelector('canvas');
-    if (!origCanvas) throw new Error("No se encontró el lienzo del PDF");
-
-    // Crear canvas temporal
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = origCanvas.width;
-    tempCanvas.height = origCanvas.height;
-    const ctx = tempCanvas.getContext('2d');
-
-    // 1. Llenar el fondo primero y dibujar el PDF
-    const savedSettings = JSON.parse(localStorage.getItem('inkit_settings') || '{}');
-    if (savedSettings.darkMode) {
-        ctx.fillStyle = '#1a1a1a'; // Color base oscuro
-        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        
-        ctx.filter = 'invert(0.9) hue-rotate(180deg) brightness(0.9) contrast(1.1)';
-        ctx.drawImage(origCanvas, 0, 0);
-        ctx.filter = 'none'; // Reset filter for annotations
-    } else {
-        ctx.fillStyle = '#ffffff'; // Color base blanco
-        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        
-        ctx.drawImage(origCanvas, 0, 0);
-    }
-
-    // Obtener factor de escala del device ratio
-    const outputScale = window.devicePixelRatio || 1;
-    const finalScale = scale * outputScale;
-
-    // 1.5 Dibujar highlights
-    const hlCanvas = activeWrapper.querySelector(".highlight-canvas");
-    if (hlCanvas) {
-        if (savedSettings.darkMode) {
-            ctx.filter = 'invert(0.9) hue-rotate(180deg) brightness(0.9) contrast(1.1)';
-        }
-        ctx.drawImage(hlCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-        ctx.filter = 'none'; // Reset
-    }
-
-    // 2. Dibujar imágenes (Firmas)
-    const { imageAnnotations } = await import('../modules/signatures.js');
-    const pageImages = imageAnnotations.filter(a => a.pageNum === pageNum);
-    
-    for (const anno of pageImages) {
-        await new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                ctx.globalAlpha = anno.opacity || 1.0;
-                ctx.drawImage(img, anno.x * finalScale, anno.y * finalScale, anno.width * finalScale, anno.height * finalScale);
-                ctx.globalAlpha = 1.0; // Reset
-                resolve();
-            };
-            img.onerror = reject;
-            img.src = anno.dataUrl;
-        });
-    }
-
-    // 3. Dibujar textos (Typewriter)
-    const { annotations } = await import('../modules/typewriter.js');
-    const pageTexts = annotations.filter(a => a.pageNum === pageNum);
-
-    pageTexts.forEach(anno => {
-        ctx.font = `${anno.fontSize * finalScale}px Arial, sans-serif`;
-        
-        // Dibujar fondo si tiene
-        if (anno.bgColor && anno.bgColor !== 'transparent') {
-            const hexBg = anno.bgColor === 'white' ? '#ffffff' : (anno.bgColor === 'gray' ? '#f0f0f0' : (anno.bgColor === 'black' ? '#000000' : 'transparent'));
-            ctx.fillStyle = hexBg;
-            const width = ctx.measureText(anno.text).width;
-            ctx.fillRect(anno.x * finalScale - (2*outputScale), anno.y * finalScale - (2*outputScale), width + (4*outputScale), (anno.fontSize * finalScale) + (4*outputScale));
-        }
-        
-        ctx.fillStyle = (anno.bgColor === 'black' && anno.color === '#000000') ? '#ffffff' : anno.color;
-        ctx.textBaseline = 'top'; // Para alinear con el left/top del HTML
-        // Ajuste empírico vertical para coincidir con cómo el navegador renderiza el div vs el fillText
-        ctx.fillText(anno.text, anno.x * finalScale, (anno.y * finalScale) + (2 * outputScale)); 
-    });
-
-    // 4. Retornar Base64
-    // Le quitamos el prefijo 'data:image/png;base64,' para guardarlo directo con Tauri
-    const dataUrl = tempCanvas.toDataURL('image/png');
-    return dataUrl.replace(/^data:image\/png;base64,/, "");
+    return renderPageAsPng(activeWrapper, pageNum, scale);
 }
 
 export async function closeDocument() {

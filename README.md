@@ -52,8 +52,8 @@ To run InkIt locally in development mode:
 ### Prerequisites
 - Node.js (v18+)
 - Rust (latest stable)
-- Tauri CLI dependencies for Windows
-- OpenSSL development libraries compatible with the `openssl` Rust crate
+- Tauri prerequisites for Windows, including the MSVC C++ build tools and Windows SDK
+- Perl available on `PATH` for the vendored OpenSSL build
 
 ### Installation
 
@@ -69,11 +69,10 @@ npm install
 npm run tauri dev
 ```
 
-On Windows, configure `OPENSSL_DIR` and `OPENSSL_LIB_DIR` to match the installed OpenSSL MSVC libraries before running Cargo/Tauri builds. For example, with OpenSSL installed at `C:\Program Files\OpenSSL-Win64`:
+OpenSSL is built from the version pinned by Cargo, so a separate OpenSSL installation and `OPENSSL_DIR` configuration are not required. On Windows, Strawberry Perl can be installed with:
 
 ```powershell
-$env:OPENSSL_DIR = 'C:\Program Files\OpenSSL-Win64'
-$env:OPENSSL_LIB_DIR = "$env:OPENSSL_DIR\lib\VC\x64\MD"
+winget install --id StrawberryPerl.StrawberryPerl --exact
 ```
 
 ## 📦 Building for Production
