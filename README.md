@@ -10,6 +10,13 @@
   </p>
 
   <p><strong>A lightning-fast, ultra-lightweight, and 100% offline PDF signer and filler.</strong></p>
+
+  <p>
+    <a href="https://apps.microsoft.com/detail/9PH8KK70MK9M">
+      <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="160" alt="Get it from Microsoft"/>
+    </a>
+  </p>
+  <p><i>✨ Coming soon for free on the Microsoft Store! | ¡Próximamente gratis en la Microsoft Store! ✨</i></p>
 </div>
 
 ---
