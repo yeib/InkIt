@@ -16,7 +16,32 @@ export function renderImageAnnotation(anno, wrapper, scale) {
     img.style.width = `${anno.width * scale}px`;
     img.style.height = `${anno.height * scale}px`;
     img.style.opacity = anno.opacity ?? 1.0;
+    img.tabIndex = 0; // Make focusable for keyboard events
     wrapper.appendChild(img);
+
+    img.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            e.stopPropagation();
+            img.remove();
+            
+            const index = imageAnnotations.findIndex(item => item.id === anno.id);
+            if (index > -1) {
+                const [deletedAnno] = imageAnnotations.splice(index, 1);
+                if (deletedAnno.isMaster) {
+                    imageAnnotations
+                        .filter(item => item.groupId === deletedAnno.groupId && item.isLinked)
+                        .forEach(item => {
+                            item.isLinked = false;
+                            item.groupId = null;
+                        });
+                }
+            }
+            commitAction();
+            const menu = document.getElementById('sig-context-menu');
+            if (menu) menu.style.display = 'none';
+        }
+    });
 
     img.addEventListener('mousedown', event => {
         if (event.button !== 0) return;
