@@ -267,7 +267,36 @@
             <span id="app-version-display">InkIt v?.?.?</span> - <a href="https://yeib.cl" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">Yeib</a>
           </p>
         </div>
-        <div class="modal-actions" style="margin-top: 24px;">
+        
+          <!-- Hotkeys Tab -->
+          <div id="content-hotkeys" class="settings-group" style="margin-top: 16px; display: none; flex-direction: column; gap: 8px; text-align: left; max-height: 200px; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span data-i18n="settings.hotkeys.open">Open PDF</span>
+              <span style="color: var(--accent-cyan); font-family: monospace;">Ctrl + O</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span data-i18n="settings.hotkeys.close">Close Document</span>
+              <span style="color: var(--accent-cyan); font-family: monospace;">Ctrl + W</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span data-i18n="settings.hotkeys.save">Quick Save</span>
+              <span style="color: var(--accent-cyan); font-family: monospace;">Ctrl + S</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span data-i18n="settings.hotkeys.print">Print</span>
+              <span style="color: var(--accent-cyan); font-family: monospace;">Ctrl + P</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span data-i18n="settings.hotkeys.settings">Settings</span>
+              <span style="color: var(--accent-cyan); font-family: monospace;">Ctrl + ,</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-bottom: 4px;">
+              <span data-i18n="settings.hotkeys.delete">Delete selected annotation</span>
+              <span style="color: var(--accent-cyan); font-family: monospace;">Supr / Backspace</span>
+            </div>
+          </div>
+          <div class="modal-actions" style="margin-top: 24px;">
+
           <button class="btn-glass primary" id="btn-settings-close" data-i18n="modal.btn.close">Close</button>
         </div>
       </div>
