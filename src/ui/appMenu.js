@@ -65,6 +65,20 @@ export function setupAppMenu(getCurrentPdfPath) {
         if (settings) settings.style.display = 'none';
     });
 
+    document.getElementById('tab-general')?.addEventListener('click', () => {
+        document.getElementById('content-general').style.display = 'flex';
+        document.getElementById('content-hotkeys').style.display = 'none';
+        document.getElementById('tab-general').classList.add('primary');
+        document.getElementById('tab-hotkeys').classList.remove('primary');
+    });
+
+    document.getElementById('tab-hotkeys')?.addEventListener('click', () => {
+        document.getElementById('content-general').style.display = 'none';
+        document.getElementById('content-hotkeys').style.display = 'flex';
+        document.getElementById('tab-hotkeys').classList.add('primary');
+        document.getElementById('tab-general').classList.remove('primary');
+    });
+
     document.addEventListener('keydown', async event => {
         if (event.ctrlKey && event.key.toLowerCase() === 'p') {
             event.preventDefault();
