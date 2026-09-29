@@ -69,6 +69,18 @@ export function setupAppMenu(getCurrentPdfPath) {
         if (event.ctrlKey && event.key.toLowerCase() === 'p') {
             event.preventDefault();
             await printDocument(getCurrentPdfPath());
+        } else if (event.ctrlKey && event.key.toLowerCase() === 'o') {
+            event.preventDefault();
+            document.getElementById('btn-open-pdf')?.click();
+        } else if (event.ctrlKey && event.key.toLowerCase() === 'w') {
+            event.preventDefault();
+            document.getElementById('menu-close-pdf')?.click();
+        } else if (event.ctrlKey && event.key.toLowerCase() === 's') {
+            event.preventDefault();
+            document.getElementById('btn-quick-save')?.click();
+        } else if (event.ctrlKey && event.key === ',') {
+            event.preventDefault();
+            document.getElementById('menu-settings')?.click();
         }
     });
 }
