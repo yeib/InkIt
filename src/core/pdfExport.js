@@ -228,6 +228,7 @@ export async function exportPng(currentPdfPath) {
         const now = new Date();
         const timeSuffix = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
 
+        let lastSavedFile = null;
         for (const pageNum of pagesToExport) {
             const base64Data = await exportPageAsPng(pageNum);
             const fileName = `${nameWithoutExt}_Page_${pageNum}_${timeSuffix}.png`;
@@ -240,9 +241,11 @@ export async function exportPng(currentPdfPath) {
                 bytes[i] = binaryString.charCodeAt(i);
             }
             await invoke('save_file', { path: filePath, contents: Array.from(bytes) });
+            lastSavedFile = filePath;
         }
 
-        showToast(window.t ? window.t('alert.saved') : 'Documento guardado', pngsFolder);
+        const pathToShow = pagesToExport.length === 1 ? lastSavedFile : pngsFolder;
+        showToast(window.t ? window.t('alert.saved') : 'Documento guardado', pathToShow);
         triggerWorkspacePulse();
         
     } catch (error) {
