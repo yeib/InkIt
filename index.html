@@ -234,7 +234,13 @@
     <div class="modal-overlay" id="settings-modal" style="display: none; z-index: 9999;">
       <div class="modal-content glass-panel" style="min-width: 400px;">
         <h3 data-i18n="settings.title">⚙️ InkIt Settings</h3>
-        <div class="settings-group" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; text-align: left;">
+        <div style="display: flex; gap: 8px; margin-top: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            <button id="tab-general" class="btn-glass primary" style="flex: 1; padding: 4px;" data-i18n="settings.tab_general">General</button>
+            <button id="tab-hotkeys" class="btn-glass" style="flex: 1; padding: 4px;" data-i18n="settings.tab_hotkeys">Hotkeys</button>
+          </div>
+
+          <!-- General Tab -->
+          <div id="content-general" class="settings-group" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; text-align: left;">
           
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <span data-i18n="settings.lang">Language (Idioma)</span>
