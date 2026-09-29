@@ -126,9 +126,10 @@
   z-index: 10;
 }
 
-.img-annotation:hover, .img-annotation.selected {
+.img-annotation:hover, .img-annotation.selected, .img-annotation:focus {
   border-color: var(--accent-cyan);
   background: rgba(0, 229, 255, 0.05);
+  outline: none;
 }
 
 .img-annotation {

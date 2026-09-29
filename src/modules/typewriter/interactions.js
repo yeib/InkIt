@@ -143,6 +143,23 @@ export function renderAnnotation(anno, wrapper, scale) {
     }
 
     div.innerText = anno.text;
+    div.tabIndex = 0; // Make focusable in pointer mode too
+
+    div.addEventListener('keydown', (e) => {
+        // Only trigger manual delete if we are in pointer mode (contentEditable is false)
+        // If it's true, the native backspace/delete inside the text takes over.
+        if (div.contentEditable === 'false' && (e.key === 'Delete' || e.key === 'Backspace')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            div.remove();
+            const idx = annotations.findIndex(a => a.id === anno.id);
+            if (idx > -1) {
+                annotations.splice(idx, 1);
+            }
+            commitAction();
+        }
+    });
     
     setupExistingAnnotation(div, anno, scale);
     wrapper.appendChild(div);
