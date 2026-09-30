@@ -16,7 +16,7 @@
       <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="160" alt="Get it from Microsoft"/>
     </a>
   </p>
-  <p><i>✨ Coming soon for free on the Microsoft Store! | ¡Próximamente gratis en la Microsoft Store! ✨</i></p>
+  <p><i>✨ Ffor free on the Microsoft Store! | ¡Gratis en la Microsoft Store! ✨</i></p>
 </div>
 
 ---
