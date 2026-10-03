@@ -34,3 +34,4 @@ time = "0.3"
 
 openssl = { version = "0.10", features = ["vendored"] }
 tauri-plugin-shell = "2.3.6"
+yeib_sys = { path = "../../crates/yeib_sys" }
