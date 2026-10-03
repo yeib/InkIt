@@ -99,6 +99,24 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // Asegurar que la carpeta Documents/InkIt exista y tenga el ícono oficial de InkIt
+      #[cfg(target_os = "windows")]
+      {
+          let mut doc_dir = std::path::PathBuf::from(std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\".to_string()));
+          doc_dir.push("Documents");
+          let inkit_dir = if doc_dir.join("InkIt").is_file() {
+              doc_dir.join("InkItYeib")
+          } else {
+              doc_dir.join("InkIt")
+          };
+          // Solo si no existe icon_pro.ico (el ícono de InkIt Pro tiene prioridad y no debe ser sobreescrito)
+          if !inkit_dir.join("icon_pro.ico").exists() {
+              let icon_bytes = include_bytes!("../icons/icon.ico");
+              let _ = yeib_sys::fs_ops::set_folder_custom_icon(&inkit_dir, icon_bytes);
+          }
+      }
+
       Ok(())
     })
     .run(tauri::generate_context!())
