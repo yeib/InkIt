@@ -15,8 +15,12 @@ import { showAlert } from '../modules/confirmModal.js';
 
 export async function savePdf(currentPdfPath) {
     if (!currentPdfPath) {
+        const { getCurrentPdfPath } = await import('./pdfViewer.js');
+        currentPdfPath = getCurrentPdfPath?.() || window.currentPdfPath;
+    }
+    if (!currentPdfPath) {
         await showAlert('InkIt', t('alert.open_first'), 'warning');
-        return;
+        return null;
     }
 
     try {
@@ -25,6 +29,7 @@ export async function savePdf(currentPdfPath) {
         const { highlightAnnotations } = await import('../modules/highlights.js');
         const { documentDir, join, basename } = await import('@tauri-apps/api/path');
         const { mkdir } = await import('@tauri-apps/plugin-fs');
+        const { getPageConfigs } = await import('./pdfViewer.js');
 
         const docsPath = await documentDir();
         const editedFolder = await join(docsPath, 'InkIt', 'Edited');
@@ -102,10 +107,12 @@ export async function savePdf(currentPdfPath) {
                 });
             }
 
+            const pagesConfig = await getPageConfigs();
+
             const recipe = {
                 file_path: currentPdfPath,
                 output_path: targetPath,
-                pages_config: [], 
+                pages_config: pagesConfig, 
                 operations: operations
             };
 
@@ -120,10 +127,15 @@ export async function savePdf(currentPdfPath) {
             // Show toast instead of blocking dialog
             showToast(t('alert.saved') || 'Documento guardado', targetPath);
             triggerWorkspacePulse();
+
+            const { setCurrentPdfPath } = await import('./pdfViewer.js');
+            setCurrentPdfPath(targetPath);
+            return targetPath;
         }
     } catch (error) {
         console.error('Error guardando PDF:', error);
         await showAlert(t('alert.title.error'), t('alert.error_save') + error, 'error');
+        return null;
     }
 }
 

@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { showAlert, showConfirm } from '../modules/confirmModal.js';
 import { isDirty, setDirty } from '../modules/state.js';
 import { t } from '../modules/translations.js';
-import { closeDocument, loadDocument } from './pdfViewer.js';
+import { closeDocument, loadDocument, setCurrentPdfPath } from './pdfViewer.js';
 import { setupDragAndDrop } from '../ui/windowControls.js';
 
 export function setupDocumentLifecycle(appWindow) {
@@ -33,6 +33,7 @@ export function setupDocumentLifecycle(appWindow) {
 
         await closeDocument();
         currentPdfPath = null;
+        setCurrentPdfPath(null);
         closeButton.style.display = 'none';
         setDirty(false);
     });
@@ -40,6 +41,7 @@ export function setupDocumentLifecycle(appWindow) {
     setupDragAndDrop(appWindow, async (path, pdfBytes) => {
         if (!(await confirmDiscardChanges())) return;
         currentPdfPath = path;
+        setCurrentPdfPath(path);
         showCloseButton();
         await loadDocument(pdfBytes);
     });
@@ -63,6 +65,7 @@ export function setupDocumentLifecycle(appWindow) {
     async function openDocumentFromPath(path) {
         console.log('Archivo seleccionado:', path);
         currentPdfPath = path;
+        setCurrentPdfPath(path);
         showCloseButton();
         const pdfBytes = await invoke('read_pdf', { path });
         await loadDocument(new Uint8Array(pdfBytes));
@@ -75,6 +78,7 @@ export function setupDocumentLifecycle(appWindow) {
 
             console.log('Archivo inicial detectado:', initialPath);
             currentPdfPath = initialPath;
+            setCurrentPdfPath(initialPath);
             showCloseButton();
             const pdfBytes = await invoke('read_pdf', { path: initialPath });
             await loadDocument(new Uint8Array(pdfBytes));

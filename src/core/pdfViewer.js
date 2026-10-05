@@ -18,9 +18,39 @@ let currentScale = 1.2;
 let container = null;
 let currentLoadingTask = null;
 let loadRequestId = 0;
+let cachedPageConfigs = null;
+export let currentPdfPath = null;
+
+export function setCurrentPdfPath(path) {
+    currentPdfPath = path;
+    window.currentPdfPath = path;
+}
+
+export function getCurrentPdfPath() {
+    return currentPdfPath;
+}
 
 export function getTotalPages() {
     return currentPdf ? currentPdf.numPages : 1;
+}
+
+export async function getPageConfigs() {
+    if (!currentPdf) return [];
+    if (cachedPageConfigs && cachedPageConfigs.length === currentPdf.numPages) {
+        return cachedPageConfigs;
+    }
+    const configs = [];
+    for (let i = 1; i <= currentPdf.numPages; i++) {
+        const page = await currentPdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.0 });
+        configs.push({
+            page_num: i,
+            width: viewport.width,
+            height: viewport.height
+        });
+    }
+    cachedPageConfigs = configs;
+    return configs;
 }
 
 export async function initPdfViewer(containerElementId) {
@@ -86,6 +116,8 @@ async function releaseCurrentPdf() {
     const loadingTask = currentLoadingTask;
     currentPdf = null;
     currentLoadingTask = null;
+    cachedPageConfigs = null;
+    setCurrentPdfPath(null);
     container?.replaceChildren();
 
     if (loadingTask) {

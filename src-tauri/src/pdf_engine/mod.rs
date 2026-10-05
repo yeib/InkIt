@@ -248,6 +248,63 @@ fn append_content_stream(doc: &mut Document, page_id: ObjectId, operations: Vec<
     Ok(())
 }
 
+fn get_page_dimensions(
+    doc: &Document,
+    page_id: ObjectId,
+    fallback_config: Option<&PageConfig>,
+) -> (f32, f32) {
+    if let Some(conf) = fallback_config {
+        if conf.width > 0.0 && conf.height > 0.0 {
+            return (conf.width, conf.height);
+        }
+    }
+
+    let mut current_id = page_id;
+    for _ in 0..10 {
+        if let Ok(dict) = doc.get_object(current_id).and_then(|o| o.as_dict()) {
+            let box_obj = dict.get(b"CropBox").or_else(|_| dict.get(b"MediaBox"));
+            if let Ok(box_arr) = box_obj.and_then(|o| o.as_array()) {
+                if box_arr.len() >= 4 {
+                    let to_f32 = |obj: &Object| -> Option<f32> {
+                        match obj {
+                            Object::Real(f) => Some(*f),
+                            Object::Integer(i) => Some(*i as f32),
+                            _ => None,
+                        }
+                    };
+                    if let (Some(x0), Some(y0), Some(x1), Some(y1)) = (
+                        to_f32(&box_arr[0]),
+                        to_f32(&box_arr[1]),
+                        to_f32(&box_arr[2]),
+                        to_f32(&box_arr[3]),
+                    ) {
+                        let w = (x1 - x0).abs();
+                        let h = (y1 - y0).abs();
+                        let rotation = dict.get(b"Rotate").ok().and_then(|o| match o {
+                            Object::Integer(r) => Some(*r),
+                            _ => None,
+                        }).unwrap_or(0);
+                        if rotation == 90 || rotation == 270 {
+                            return (h, w);
+                        } else {
+                            return (w, h);
+                        }
+                    }
+                }
+            }
+            if let Ok(parent_ref) = dict.get(b"Parent").and_then(|o| o.as_reference()) {
+                current_id = parent_ref;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    (612.0, 792.0)
+}
+
 // ==========================================
 // MAIN FLATTEN PROCESS
 // ==========================================
@@ -266,8 +323,7 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
                     .copied()
                     .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
-                let page_width = page_conf.map(|c| c.width).unwrap_or(612.0);
-                let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
+                let (page_width, page_height) = get_page_dimensions(&doc, page_id, page_conf);
 
                 let mut dict = lopdf::Dictionary::new();
                 dict.set("Type", lopdf::Object::Name(b"ExtGState".to_vec()));
@@ -294,7 +350,7 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
                     .copied()
                     .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
-                let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
+                let (_page_width, page_height) = get_page_dimensions(&doc, page_id, page_conf);
                 let pdf_y = map_y(y, page_height, height);
 
                 let img = decode_base64_png(&base64_data).map_err(|e| format!("Error decodificando imagen: {}", e))?;
@@ -332,7 +388,7 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
                     .copied()
                     .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
-                let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
+                let (_page_width, page_height) = get_page_dimensions(&doc, page_id, page_conf);
                 let pdf_y = map_y(y, page_height, font_size); // Approx bounding box
 
                 // Register Font if not already registered in this document
@@ -376,7 +432,7 @@ pub fn process_flatten(recipe: FlattenRecipe) -> Result<(), String> {
                     .copied()
                     .ok_or_else(|| format!("Página {page} no existe en el PDF"))?;
                 let page_conf = recipe.pages_config.iter().find(|c| c.page_num == page);
-                let page_height = page_conf.map(|c| c.height).unwrap_or(792.0);
+                let (_page_width, page_height) = get_page_dimensions(&doc, page_id, page_conf);
 
                 // Create ExtGState specific for this opacity
                 let gs_id = build_extgstate_dictionary(&mut doc, opacity);

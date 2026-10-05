@@ -83,6 +83,7 @@ export function createVaultItem(itemData, index, storageKey) {
             const { savePdf } = await import('../../core/pdfExport.js');
             const { invoke } = await import('@tauri-apps/api/core');
             
+            let pathToSign = pdfViewer.currentPdfPath || window.currentPdfPath;
             if (stateModule.isDirty) {
                 const { showConfirm } = await import('../confirmModal.js');
                 const wantsToSave = await showConfirm(
@@ -92,14 +93,16 @@ export function createVaultItem(itemData, index, storageKey) {
                     t('modal.btn.cancel')
                 );
                 if (!wantsToSave) return;
-                await savePdf(pdfViewer.currentPdfPath);
+                const savedPath = await savePdf(pathToSign);
+                if (!savedPath) return;
+                pathToSign = savedPath;
             }
 
             // Flujo de firma + exportación compartido con el botón de la
             // toolbar (identity.js) — antes este bloque estaba duplicado
             // aquí con solo el origen de pfxPath/password como diferencia.
             const { showAlert: _va } = await import('../confirmModal.js');
-            await signAndExport({ invoke, showAlert: _va, pdfViewer, pfxPath, password });
+            await signAndExport({ invoke, showAlert: _va, pdfViewer, pfxPath, password, targetPdfPath: pathToSign });
         });
         item.appendChild(signBtn);
     }

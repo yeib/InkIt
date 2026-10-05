@@ -60,6 +60,7 @@ async function signCurrentPdfWithPfx() {
     const stateModule = await import('../../modules/state.js');
     const pdfViewer = await import('../../core/pdfViewer.js');
 
+    let pathToSign = pdfViewer.currentPdfPath || window.currentPdfPath;
     if (stateModule.isDirty) {
         const wantsToSave = await showConfirm(
             t('alert.title.unsaved'),
@@ -68,10 +69,12 @@ async function signCurrentPdfWithPfx() {
             t('modal.btn.cancel')
         );
         if (!wantsToSave) return;
-        await savePdf(pdfViewer.currentPdfPath);
+        const savedPath = await savePdf(pathToSign);
+        if (!savedPath) return;
+        pathToSign = savedPath;
     }
 
-    await signAndExport({ invoke, showAlert, pdfViewer, pfxPath, password });
+    await signAndExport({ invoke, showAlert, pdfViewer, pfxPath, password, targetPdfPath: pathToSign });
 }
 
 /**
@@ -80,10 +83,10 @@ async function signCurrentPdfWithPfx() {
  * toolbar (signCurrentPdfWithPfx) y el botón 🔐 de cada identidad en la
  * bóveda (vault.js).
  */
-export async function signAndExport({ invoke, showAlert: alertFn, pdfViewer, pfxPath, password }) {
+export async function signAndExport({ invoke, showAlert: alertFn, pdfViewer, pfxPath, password, targetPdfPath }) {
     const notifyAlert = alertFn || showAlert;
     try {
-        const currentPath = pdfViewer.currentPdfPath || window.currentPdfPath;
+        const currentPath = targetPdfPath || pdfViewer?.currentPdfPath || window.currentPdfPath;
         if (!currentPath) {
             await notifyAlert('InkIt', t('alert.open_first_sign'), 'warning');
             return;
