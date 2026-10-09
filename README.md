@@ -59,7 +59,7 @@ If you love the speed of InkIt but need heavy-duty document tools for your daily
 | **PDF Doctor & Repair Tool** | ❌ | ✅ *(Fix damaged XRefs)* |
 | **Export Center (ZIP, Long PNG strip, PDF)** | ❌ | ✅ |
 
-👉 **[Get InkIt Pro on the Microsoft Store](https://apps.microsoft.com/detail/9N829VPRQ92W)** — *Support independent open-source development!*
+👉 **[Get InkIt Pro on the Microsoft Store](https://apps.microsoft.com/detail/9N829VPRQ92W)** — *Upgrade to the full professional offline PDF suite.*
 
 ---
 
