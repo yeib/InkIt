@@ -7,11 +7,7 @@ import {
     setupPageObserver
 } from './pdfPageRenderer.js';
 import { renderPageAsPng } from './pdfPageExport.js';
-
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-
-// Configurar el worker (usando la misma versión que la librería)
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+import { getPdfJsDocumentParams } from './pdfjsConfig.js';
 
 let currentPdf = null;
 let currentScale = 1.2;
@@ -187,7 +183,7 @@ export async function loadDocument(pdfBytes) {
 
         container.innerHTML = '<div class="loading-state"><p>' + (window.t ? window.t('loading') : 'Loading...') + '</p></div>';
         
-        currentLoadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+        currentLoadingTask = pdfjsLib.getDocument(getPdfJsDocumentParams({ data: pdfBytes }));
         currentPdf = await currentLoadingTask.promise;
         if (requestId !== loadRequestId) return;
         

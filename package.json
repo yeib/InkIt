@@ -6,7 +6,9 @@
   "author": "Yeib",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/copy-pdfjs-assets.cjs",
     "build": "vite build",
+    "postinstall": "node scripts/copy-pdfjs-assets.cjs",
     "preview": "vite preview",
     "tauri": "tauri",
     "msix": "node scripts/build-msix.js",
