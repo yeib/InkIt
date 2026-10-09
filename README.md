@@ -39,6 +39,30 @@ Built for Windows with **Tauri (Rust + JS)**, InkIt opens your heaviest PDFs in 
 - **🖨️ Export & Print:** Print directly from the app (without annoying browser headers) or export pages as PNGs.
 - **🌍 Dual Language:** Fully translated into English and Spanish.
 
+---
+
+### ⚡ Need Professional Document Power? Meet InkIt Pro!
+
+If you love the speed of InkIt but need heavy-duty document tools for your daily workflow, check out **[InkIt Pro](https://apps.microsoft.com/detail/9N829VPRQ92W)** on the Microsoft Store:
+
+| Feature | 🖋️ InkIt (Open Source) | ⚡ InkIt Pro |
+| :--- | :---: | :---: |
+| **Price & License** | Free (MIT) | One-time Lifetime |
+| **Instant Offline Signing & Vault** | ✅ | ✅ |
+| **Annotations, Text & Shapes** | ✅ | ✅ |
+| **High-Precision Multi-level PDF Compression** | ❌ | ✅ *(Save up to 80% size)* |
+| **PDF Merge, Split & Range Extractor** | ❌ | ✅ *(Batch multi-file)* |
+| **AcroForm Auto-Detection & Interactive Fill** | ❌ | ✅ *(Flatten & vector)* |
+| **Cryptographic PKCS#12 Digital Signatures** | Basic | ✅ *(.pfx / .p12 certificates)* |
+| **Interactive Board & N-Up Sheet Compiler** | ❌ | ✅ *(Combine & arrange)* |
+| **Vector Watermarks & Dynamic Page Numbers** | ❌ | ✅ *(Bates numbering)* |
+| **PDF Doctor & Repair Tool** | ❌ | ✅ *(Fix damaged XRefs)* |
+| **Export Center (ZIP, Long PNG strip, PDF)** | ❌ | ✅ |
+
+👉 **[Get InkIt Pro on the Microsoft Store](https://apps.microsoft.com/detail/9N829VPRQ92W)** — *Support independent open-source development!*
+
+---
+
 ## 🏗️ Architecture & Tech Stack
 
 Currently, InkIt is built as a hybrid application to maximize UI fluidity and rapid prototyping:
