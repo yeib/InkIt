@@ -16,65 +16,35 @@
       <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="160" alt="Get it from Microsoft"/>
     </a>
   </p>
-  <p><i>✨ For free on the Microsoft Store! | ¡Gratis en la Microsoft Store! ✨</i></p>
+  <p><i>✨ Free on the Microsoft Store & GitHub ✨</i></p>
 </div>
 
 ---
 
 ## ⚡ Why InkIt?
 
-Adobe Acrobat is heavy. SumatraPDF is great for reading, but lacks interactive signing and form filling. **InkIt** bridges the gap. 
+Adobe Acrobat is bloated and slow. SumatraPDF is great for reading, but lacks interactive signing and form filling. Web converters compromise document privacy. **InkIt bridges the gap.**
 
-Built for Windows with **Tauri (Rust + JS)**, InkIt opens your heaviest PDFs in milliseconds, lets you type anywhere, drop checkmarks, draw your signature smoothly, and flattens it directly into the binary—all completely offline.
+Built natively for Windows with **Rust (Tauri v2) and modern web technologies**, InkIt opens your heaviest PDFs in milliseconds, lets you sign fluidly, type anywhere, drop stamps, and flatten annotations directly into the document—all strictly offline on your own machine.
 
 ## 💎 Key Features
 
-- **🚀 Instant Cold Start:** Opens faster than a standard web browser tab. No splash screens.
-- **🛡️ Provable Privacy (100% Offline):** Zero cloud APIs. Your sensitive legal contracts never leave your hard drive.
-- **🖋️ Fluid Canvas Signing & Vault:** Smooth signature drawing. Save your frequent signatures to use them with one click.
-- **🔤 Typewriter & Quick Stamps:** Click anywhere to type text (with customizable background colors). Instantly drop checkmarks (✓, ✗) or the current Date.
-- **🖍️ Freehand Highlighter:** Mark up your documents with a fluid, multi-color overlay highlighter that saves directly into the PDF.
-- **🎓 Stamps & Digital Identities:** We split signatures into two vaults. Save your drawn/imported stamps, and generate professional-looking "Digital Identities" (including Name, Email, and Role) directly in the app.
-- **🎨 Dark Mode & Customization:** Force dark mode on bright PDFs to protect your eyes, and toggle high-quality rendering.
-- **🖨️ Export & Print:** Print directly from the app (without annoying browser headers) or export pages as PNGs.
-- **🌍 Dual Language:** Fully translated into English and Spanish.
-
----
-
-### ⚡ Need Professional Document Power? Meet InkIt Pro!
-
-If you love the speed of InkIt but need heavy-duty document tools for your daily workflow, check out **[InkIt Pro](https://apps.microsoft.com/detail/9N829VPRQ92W)** on the Microsoft Store:
-
-| Feature | 🖋️ InkIt (Open Source) | ⚡ InkIt Pro |
-| :--- | :---: | :---: |
-| **Price & License** | Free (MIT) | One-time Lifetime |
-| **Instant Offline Signing & Vault** | ✅ | ✅ |
-| **Annotations, Text & Shapes** | ✅ | ✅ |
-| **High-Precision Multi-level PDF Compression** | ❌ | ✅ *(Save up to 80% size)* |
-| **PDF Merge, Split & Range Extractor** | ❌ | ✅ *(Batch multi-file)* |
-| **AcroForm Auto-Detection & Interactive Fill** | ❌ | ✅ *(Flatten & vector)* |
-| **Cryptographic PKCS#12 Digital Signatures** | Basic | ✅ *(.pfx / .p12 certificates)* |
-| **Interactive Board & N-Up Sheet Compiler** | ❌ | ✅ *(Combine & arrange)* |
-| **Vector Watermarks & Dynamic Page Numbers** | ❌ | ✅ *(Bates numbering)* |
-| **PDF Doctor & Repair Tool** | ❌ | ✅ *(Fix damaged XRefs)* |
-| **Export Center (ZIP, Long PNG strip, PDF)** | ❌ | ✅ |
-
-👉 **[Get InkIt Pro on the Microsoft Store](https://apps.microsoft.com/detail/9N829VPRQ92W)** — *Upgrade to the full professional offline PDF suite.*
-
----
+- **🚀 Instant Cold Start:** Launches in under 100ms. Zero loading screens, zero background telemetry.
+- **🛡️ 100% Offline & Private:** Zero cloud dependencies. Your legal contracts and sensitive documents never leave your PC.
+- **🖋️ Fluid Canvas Signing & Dual Vault:** Ultra-smooth signature drawing with Bézier curve smoothing. Store frequent signatures in your private vault for one-click reuse.
+- **🔤 Typewriter & Quick Annotations:** Click anywhere to type text with customizable chip backgrounds. Drop instant checkmarks (✓, ✗) or localized date stamps.
+- **🖍️ Freehand Highlighter:** Mark up documents with a fluid, multi-color overlay highlighter that saves directly into the PDF.
+- **🎓 Digital Identities & Stamps:** Generate professional corporate signature stamps with Name, Email, and Role.
+- **🎨 Dark Glassmorphism UI:** Fluent, eye-friendly dark mode for bright PDFs with custom theme controls.
+- **🖨️ Native Print & PNG Export:** Clean high-resolution printing without browser margins or export pages as PNGs.
+- **🌍 Bilingual Support:** Fully localized in English and Spanish.
 
 ## 🏗️ Architecture & Tech Stack
 
-Currently, InkIt is built as a hybrid application to maximize UI fluidity and rapid prototyping:
+InkIt follows a lightweight, decoupled architecture designed for speed and native Windows integration:
 
-- **Frontend (UI & Rendering):** Vanilla JS + ES6 Modules. Uses `pdf.js` for fast document rendering and `pdf-lib` for binary manipulation.
-- **Backend (Native Shell):** Rust 🦀 + Tauri v2. Handles the native Windows bindings, secure file system operations (`std::fs`), and OS dialogs.
-
-> **🎉 v1.0.0 (The Official Release) is Here!** 
-> 
-> InkIt has reached its v1.0 milestone. PDF annotation flattening is processed in our **Rust backend**.
-> 
-> InkIt supports **PKCS#7/CMS PDF signatures** using .pfx/.p12 certificates. Identities generated by InkIt are self-signed: signatures can prove that signed bytes have not changed, but recipients must explicitly trust that certificate, and InkIt does not establish a publicly trusted certificate chain or guarantee legal validity. You can also use certificates issued by a trusted provider; acceptance and legal effect depend on the certificate, validation software, and applicable law.
+- **Frontend:** Vanilla JS + ES6 Modules. Utilizes `pdfjs-dist` on dedicated Web Workers with WASM and CMap bundles for fast, pixel-perfect rendering of any PDF format.
+- **Backend:** Native Rust 🦀 + Tauri v2. Handles OS dialogs, secure file system operations (`std::fs`), and binary annotation flattening.
 
 ## 🚀 Getting Started
 
@@ -83,8 +53,11 @@ To run InkIt locally in development mode:
 ### Prerequisites
 - Node.js (v18+)
 - Rust (latest stable)
-- Tauri prerequisites for Windows, including the MSVC C++ build tools and Windows SDK
-- Perl available on `PATH` for the vendored OpenSSL build
+- Visual Studio C++ Build Tools & Windows SDK
+- Strawberry Perl on `PATH` (for the vendored OpenSSL build):
+  ```powershell
+  winget install --id StrawberryPerl.StrawberryPerl --exact
+  ```
 
 ### Installation
 
@@ -93,30 +66,48 @@ To run InkIt locally in development mode:
 git clone https://github.com/yeib/InkIt.git
 cd InkIt
 
-# Install dependencies
+# Install dependencies (copies WASM and CMap assets automatically)
 npm install
 
-# Start the development server and Rust backend
+# Start development mode
 npm run tauri dev
-```
-
-OpenSSL is built from the version pinned by Cargo, so a separate OpenSSL installation and `OPENSSL_DIR` configuration are not required. On Windows, Strawberry Perl can be installed with:
-
-```powershell
-winget install --id StrawberryPerl.StrawberryPerl --exact
 ```
 
 ## 📦 Building for Production
 
-To build a standalone Windows executable (`.exe` or `.msix`):
+To build a standalone Windows executable (`.exe`) or MSIX package:
 
 ```bash
 npm run tauri build
 ```
 
+---
+
+## ⚡ Need Heavy-Duty Document Tools? Meet InkIt Pro
+
+For power users, legal teams, and businesses needing batch processing and advanced cryptographic tools, explore **InkIt Pro** on the Microsoft Store:
+
+| Feature | 🖋️ InkIt (Open Source) | ⚡ InkIt Pro |
+| :--- | :---: | :---: |
+| **Price & License** | Free (MIT) | One-time Lifetime |
+| **Instant Offline Signing & Vault** | ✅ | ✅ |
+| **Annotations, Text, Stamps & Highlighters** | ✅ | ✅ |
+| **Multi-level PDF Compression** | ❌ | ✅ *(Save up to 80% file size)* |
+| **Batch PDF Merge, Split & Range Extractor** | ❌ | ✅ *(Visual drag & drop)* |
+| **AcroForm Auto-Detection & Interactive Fill** | ❌ | ✅ *(Flatten & vector)* |
+| **Cryptographic PKCS#12 Digital Signatures** | Basic | ✅ *(.pfx / .p12 certificates)* |
+| **Interactive Board & N-Up Sheet Compiler** | ❌ | ✅ *(Combine & rearrange)* |
+| **Vector Watermarks & Dynamic Page Numbers** | ❌ | ✅ *(Bates numbering)* |
+| **PDF Doctor & Damaged XRefs Repair** | ❌ | ✅ |
+| **Export Center (ZIP, Long PNG strip, PDF)** | ❌ | ✅ |
+
+👉 **[Get InkIt Pro on the Microsoft Store](https://apps.microsoft.com/detail/9N829VPRQ92W)** — *Upgrade to the complete offline professional PDF suite.*
+
+---
+
 ## 🤝 Contributing
 
-This project is currently in active development. Pull requests are absolutely welcome! 
+Contributions, bug reports, and suggestions are welcome!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
