@@ -40,3 +40,6 @@ store-assets/
 *.appx
 src-tauri/gen/windows/out/
 *.py
+
+# Scripts privados de firma
+firmar_exe.ps1

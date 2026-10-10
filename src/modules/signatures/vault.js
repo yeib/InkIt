@@ -4,6 +4,30 @@ import { clearCanvas } from './drawing.js';
 import { promptPassword } from './passwordModal.js';
 import { signAndExport } from './identity.js';
 
+export function getEsignLang() {
+    const saved = localStorage.getItem('inkit_esign_lang');
+    if (saved === 'es' || saved === 'en') return saved;
+    const appLang = (typeof localStorage !== 'undefined' ? localStorage.getItem('inkit_lang') : null) || 'es';
+    return appLang.startsWith('en') ? 'en' : 'es';
+}
+
+export function setEsignLang(lang) {
+    if (lang !== 'es' && lang !== 'en') return;
+    localStorage.setItem('inkit_esign_lang', lang);
+    renderVaults();
+}
+
+export function updateEsignLangButtons(lang = getEsignLang()) {
+    const btnEs = document.getElementById('btn-esign-lang-es');
+    const btnEn = document.getElementById('btn-esign-lang-en');
+    if (btnEs) {
+        btnEs.classList.toggle('active', lang === 'es');
+    }
+    if (btnEn) {
+        btnEn.classList.toggle('active', lang === 'en');
+    }
+}
+
 export function renderVaults() {
     // Render Stamps
     const stampList = document.getElementById('stamp-list');
@@ -32,13 +56,24 @@ export function renderVaults() {
             esignList.appendChild(item);
         });
     }
+
+    updateEsignLangButtons();
 }
 
 export function createVaultItem(itemData, index, storageKey) {
     const item = document.createElement('div');
     item.className = 'signature-item';
 
-    let dataUrl = typeof itemData === 'string' ? itemData : itemData.dataUrl;
+    const esignLang = getEsignLang();
+    let dataUrl;
+    if (typeof itemData === 'string') {
+        dataUrl = itemData;
+    } else if (storageKey === 'inkit_esigns') {
+        dataUrl = (esignLang === 'en' ? itemData.dataUrlEn : itemData.dataUrlEs) || itemData.dataUrl;
+    } else {
+        dataUrl = itemData.dataUrl;
+    }
+
     let pfxPath = typeof itemData === 'string' ? null : itemData.pfxPath;
 
     const img = document.createElement('img');
@@ -107,9 +142,27 @@ export function createVaultItem(itemData, index, storageKey) {
         item.appendChild(signBtn);
     }
 
-    item.addEventListener('click', () => {
-        state.selectedSignatureBase64 = dataUrl;
-        state.selectedSignatureItemData = typeof itemData === 'string' ? { dataUrl: itemData } : itemData;
+    item.addEventListener('click', async () => {
+        let activeDataUrl = dataUrl;
+        let activeItemData = typeof itemData === 'string' ? { dataUrl: itemData } : { ...itemData };
+
+        if (storageKey === 'inkit_esigns' && activeItemData.name) {
+            try {
+                const { generateVisualStamp, generateFooterStamp } = await import('./identity.js');
+                const now = new Date();
+                const freshLang = getEsignLang();
+                const freshStamp = await generateVisualStamp(activeItemData, now, freshLang);
+                const freshFooter = await generateFooterStamp(activeItemData, now, freshLang);
+                activeDataUrl = freshStamp;
+                activeItemData.dataUrl = freshStamp;
+                activeItemData.footerDataUrl = freshFooter;
+            } catch (err) {
+                console.warn('Fallback al sello guardado:', err);
+            }
+        }
+
+        state.selectedSignatureBase64 = activeDataUrl;
+        state.selectedSignatureItemData = activeItemData;
         state.selectedSignatureItemData.type = storageKey === 'inkit_esigns' ? 'esign' : 'stamp';
         state.isStampingMode = true;
         state.pdfContainer.style.cursor = 'crosshair';

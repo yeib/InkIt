@@ -132,7 +132,58 @@
   outline: none;
 }
 
-.img-annotation {
-  
-  
+/* e-Sign Language Selector & Tabs */
+.esign-lang-toggle {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.esign-lang-btn {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.esign-lang-btn:hover {
+  color: #fff;
+}
+
+.esign-lang-btn.active {
+  font-weight: 800;
+  background: var(--accent-cyan);
+  color: #041017;
+}
+
+.modal-tab-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.modal-tab-btn.active {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: #fff;
+  font-weight: 600;
 }

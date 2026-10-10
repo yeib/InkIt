@@ -704,7 +704,8 @@ pub fn sign_pdf_pkcs12(
     let sig_id = incremental.new_document.new_object_id();
     let widget_id = incremental.new_document.new_object_id();
 
-    let signing_time: Object = time::OffsetDateTime::now_utc().into();
+    let now_local = time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());
+    let signing_time: Object = now_local.into();
     let byte_range_placeholder: i64 = 10i64.pow(BYTE_RANGE_DIGIT_WIDTH as u32) - 1; // 9999999999
 
     let sig_dict = dictionary! {

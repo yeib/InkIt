@@ -1,6 +1,6 @@
 [package]
 name = "inkit"
-version = "1.0.1"
+version = "1.0.3"
 description = "InkIt - Yeib Ecosystem"
 authors = ["Yeib"]
 repository = "https://github.com/yeib/InkIt"
@@ -29,7 +29,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
 flate2 = "1.0"
 anyhow = "1.0"
-time = "0.3"
+time = { version = "0.3", features = ["local-offset"] }
 
 
 openssl = { version = "0.10", features = ["vendored"] }

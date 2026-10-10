@@ -182,9 +182,14 @@
         <div class="signature-vault glass-panel" id="esign-vault" style="display: none;">
           <div class="vault-header">
             <span data-i18n="vault.esign_title">Digital Identities</span>
-            <div style="display: flex; gap: 4px;">
-              <button class="btn-glass" id="btn-new-identity" data-i18n="vault.new_identity">+ Identity</button>
+            <div class="esign-lang-toggle">
+              <button type="button" id="btn-esign-lang-es" class="esign-lang-btn active" data-i18n-title="vault.esign_lang_es" title="Español (Firmado digitalmente por)">ES</button>
+              <button type="button" id="btn-esign-lang-en" class="esign-lang-btn" data-i18n-title="vault.esign_lang_en" title="English (Digitally signed by)">EN</button>
             </div>
+          </div>
+          <div style="display: flex; gap: 8px; padding: 0 0 12px 0;">
+            <button class="btn-glass primary" id="btn-import-identity" style="flex: 1;" data-i18n="vault.import_identity">+ Import</button>
+            <button class="btn-glass primary" id="btn-new-identity" style="flex: 1;" data-i18n="vault.new_identity">+ Identity</button>
           </div>
           <div class="vault-list" id="esign-list">
             <p class="empty-msg" data-i18n="vault.empty_identities">No saved identities.</p>
@@ -203,17 +208,38 @@
     <!-- Modal para Dibujar Firma -->
     <!-- Sello Digital Modal -->
     <div class="modal-overlay" id="stamp-modal" style="display: none; z-index: 9999;">
-      <div class="glass-panel modal-content" style="width: 400px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-        <h3 style="margin: 0;" data-i18n="modal.stamp.title">Create Digital Stamp</h3>
-        <p style="margin: 0; font-size: 14px; opacity: 0.8;" data-i18n="modal.stamp.desc">Enter your details to generate a professional visual stamp.</p>
-        <div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
+      <div class="glass-panel modal-content" style="width: 420px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+        <h3 style="margin: 0;" id="stamp-modal-heading" data-i18n="modal.stamp.title">Create Digital Identity</h3>
+
+        <!-- Tabs estilo InkIt Pro -->
+        <div style="display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; width: 100%;">
+          <button type="button" id="tab-pfx-create" class="modal-tab-btn active" data-i18n="modal.pfx.tab_create">+ Create Seal</button>
+          <button type="button" id="tab-pfx-import" class="modal-tab-btn" data-i18n="modal.pfx.tab_import">🔑 Import .pfx</button>
+        </div>
+
+        <p style="margin: 0; font-size: 13px; opacity: 0.8; width: 100%;" id="stamp-modal-desc" data-i18n="modal.stamp.desc">Enter your details to generate a digital identity.</p>
+
+        <!-- Tab 1: Formulario Crear Sello -->
+        <div id="pfx-create-section" style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
           <input type="text" id="stamp-input-name" autocomplete="off" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name (e.g. Yeib)" style="width: 100%; box-sizing: border-box;" />
           <input type="text" id="stamp-input-detail" autocomplete="off" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail (Optional)" style="width: 100%; box-sizing: border-box;" />
           <input type="text" id="stamp-input-extra" autocomplete="off" class="glass-input" data-i18n="modal.stamp.extra" placeholder="Role, Company or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
         </div>
-        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
-          <button class="btn-glass" id="btn-cancel-stamp" data-i18n="modal.btn.cancel">Cancel</button>
-          <button class="btn-glass primary" id="btn-generate-stamp" data-i18n="modal.btn.generate">Generate Stamp</button>
+
+        <!-- Tab 2: Formulario Importar .pfx -->
+        <div id="pfx-import-section" style="display: none; flex-direction: column; gap: 12px; align-items: stretch; width: 100%;">
+          <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+            <button type="button" class="btn-glass primary" id="btn-browse-pfx" style="flex-shrink: 0;" data-i18n="modal.pfx.browse">Browse...</button>
+            <span id="pfx-chosen-filename" style="font-size: 0.85rem; color: #10b981; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-i18n="modal.pfx.no_file">No file selected</span>
+          </div>
+          <input type="text" id="pfx-import-name" autocomplete="off" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="pfx-import-detail" autocomplete="off" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail (Optional)" style="width: 100%; box-sizing: border-box;" />
+          <input type="text" id="pfx-import-extra" autocomplete="off" class="glass-input" data-i18n="modal.stamp.extra" placeholder="Role, Company or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px; width: 100%; margin-top: 4px;">
+          <button type="button" class="btn-glass" id="btn-cancel-stamp" data-i18n="modal.btn.cancel">Cancel</button>
+          <button type="button" class="btn-glass primary" id="btn-generate-stamp" data-i18n="modal.btn.generate">Generate Identity</button>
         </div>
       </div>
     </div>

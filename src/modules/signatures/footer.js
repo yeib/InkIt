@@ -45,10 +45,13 @@ export async function createSignatureFooter(originalDataUrl) {
         20 + imageWidth + 20,
         25
     );
+    const { formatStampDate } = await import('./identity.js');
+    const esignLang = isSpanish ? 'es' : 'en';
+    const dateStr = formatStampDate(new Date(), esignLang);
     context.fillText(
         isSpanish
-            ? `Fecha de firma: ${new Date().toLocaleString()}`
-            : `Signature Date: ${new Date().toLocaleString()}`,
+            ? `Fecha de firma: ${dateStr}`
+            : `Signature Date: ${dateStr}`,
         20 + imageWidth + 20,
         45
     );

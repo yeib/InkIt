@@ -40,10 +40,10 @@ export function setupDocumentLifecycle(appWindow) {
 
     setupDragAndDrop(appWindow, async (path, pdfBytes) => {
         if (!(await confirmDiscardChanges())) return;
-        currentPdfPath = path;
-        setCurrentPdfPath(path);
         showCloseButton();
         await loadDocument(pdfBytes);
+        currentPdfPath = path;
+        setCurrentPdfPath(path);
     });
 
     void openInitialDocument();
@@ -64,11 +64,11 @@ export function setupDocumentLifecycle(appWindow) {
 
     async function openDocumentFromPath(path) {
         console.log('Archivo seleccionado:', path);
-        currentPdfPath = path;
-        setCurrentPdfPath(path);
         showCloseButton();
         const pdfBytes = await invoke('read_pdf', { path });
         await loadDocument(new Uint8Array(pdfBytes));
+        currentPdfPath = path;
+        setCurrentPdfPath(path);
     }
 
     async function openInitialDocument() {
@@ -77,11 +77,11 @@ export function setupDocumentLifecycle(appWindow) {
             if (!initialPath) return;
 
             console.log('Archivo inicial detectado:', initialPath);
-            currentPdfPath = initialPath;
-            setCurrentPdfPath(initialPath);
             showCloseButton();
             const pdfBytes = await invoke('read_pdf', { path: initialPath });
             await loadDocument(new Uint8Array(pdfBytes));
+            currentPdfPath = initialPath;
+            setCurrentPdfPath(initialPath);
         } catch (error) {
             console.error('Error al cargar PDF inicial:', error);
         }
