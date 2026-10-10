@@ -21,6 +21,17 @@
 
 ---
 
+## 🚀 Quick Install
+
+### Windows Package Manager (winget)
+```powershell
+winget install 9PH8KK70MK9M
+```
+
+Or download directly from the [Microsoft Store](https://apps.microsoft.com/detail/9PH8KK70MK9M) or [GitHub Releases](https://github.com/yeib/InkIt/releases/latest).
+
+---
+
 ## ⚡ Why InkIt?
 
 Adobe Acrobat is bloated and slow. SumatraPDF is great for reading, but lacks interactive signing and form filling. Web converters compromise document privacy. **InkIt bridges the gap.**
