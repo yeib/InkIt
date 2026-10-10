@@ -43,3 +43,4 @@ src-tauri/gen/windows/out/
 
 # Scripts privados de firma
 firmar_exe.ps1
+generar_certificado.ps1
