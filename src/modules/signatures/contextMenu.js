@@ -15,12 +15,14 @@ export function showImageContextMenu(anno, img, scale, event) {
     const menu = document.getElementById('sig-context-menu');
     if (!menu) return;
 
+    menu.style.display = 'flex';
+
     const opacityContainer = document.getElementById('sig-ctx-opacity-container');
     if (opacityContainer) opacityContainer.style.display = 'block';
 
     const bannerButton = document.getElementById('sig-ctx-banner');
     if (bannerButton) {
-        bannerButton.style.display = anno.type === 'esign' ? 'block' : 'none';
+        bannerButton.style.display = 'flex';
     }
 
     const linkButton = document.getElementById('sig-ctx-link');
@@ -48,6 +50,8 @@ export function showImageContextMenu(anno, img, scale, event) {
     let left = event.clientX;
     if (top + rect.height > window.innerHeight) top -= rect.height;
     if (left + rect.width > window.innerWidth) left -= rect.width;
+    if (top < 10) top = 10;
+    if (left < 10) left = 10;
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
 }
@@ -69,6 +73,14 @@ function getPageDimensions(img, scale) {
 async function applyFooter(anno, img, scale, menu) {
     const { width, height } = getPageDimensions(img, scale);
     try {
+        if (!anno.normalDataUrl) {
+            anno.normalDataUrl = anno.dataUrl;
+            anno.normalRatio = anno.originalRatio || (anno.width / anno.height);
+        }
+        if (anno.dataUrl !== anno.footerDataUrl) {
+            anno.preFooterX = anno.x;
+            anno.preFooterY = anno.y;
+        }
         if (!anno.footerDataUrl) {
             anno.footerDataUrl = await createSignatureFooter(anno.normalDataUrl || anno.dataUrl);
         }
@@ -85,6 +97,14 @@ async function applyFooter(anno, img, scale, menu) {
 function applyFooterSize(anno, img, scale, menu) {
     detachFromMaster(anno);
     const { width: pageWidth, height: pageHeight } = getPageDimensions(img, scale);
+    if (!anno.normalDataUrl) {
+        anno.normalDataUrl = anno.dataUrl;
+        anno.normalRatio = anno.originalRatio || (anno.width / anno.height);
+    }
+    if (anno.dataUrl !== anno.footerDataUrl) {
+        anno.preFooterX = anno.x;
+        anno.preFooterY = anno.y;
+    }
     if (!anno.footerDataUrl) {
         void applyFooter(anno, img, scale, menu);
         return;
@@ -117,6 +137,10 @@ function createSizeHandler(menu) {
             img.src = anno.normalDataUrl;
             ratio = anno.normalRatio || ratio;
             anno.originalRatio = ratio;
+            if (anno.preFooterX !== undefined) {
+                anno.x = anno.preFooterX;
+                anno.y = anno.preFooterY;
+            }
         }
 
         const isStamp = ratio > 3;
@@ -267,6 +291,18 @@ export function setupInteractionsMenu(renderImageAnnotation) {
     const menu = document.getElementById('sig-context-menu');
     document.addEventListener('click', event => {
         if (menu && menu.style.display === 'flex' && !menu.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('contextmenu', event => {
+        if (menu && menu.style.display === 'flex' && !menu.contains(event.target) && !event.target.classList.contains('img-annotation')) {
+            menu.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && menu && menu.style.display === 'flex') {
             menu.style.display = 'none';
         }
     });

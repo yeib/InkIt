@@ -469,10 +469,12 @@ main.workspace {
 .history-dropdown-item:hover, .history-dropdown-item:focus-visible { outline: none; color: var(--accent-cyan); background: rgba(0, 229, 255, 0.12); }
 .dropdown-menu { position: absolute; top: 100%; left: 0; margin-top: 8px; padding: 8px; display: flex; flex-direction: column; min-width: 200px; z-index: 200; border: 1px solid var(--glass-border); background: rgba(20,20,20,0.9); box-shadow: var(--glass-shadow); }
 .dropdown-item { background: transparent; border: none; color: var(--text-color); text-align: left; padding: 10px 12px; cursor: pointer; border-radius: 6px; transition: var(--transition-smooth); font-family: var(--font-family); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+.dropdown-item:hover, .dropdown-item:focus-visible { outline: none; background: rgba(255, 255, 255, 0.08); color: var(--accent-cyan); }
 .dropdown-menu .divider { height: 1px; background: var(--glass-border); margin: 6px 0; }
 
 /* Custom Context Menu for Signatures & Stamps */
 #sig-context-menu {
+  position: fixed !important;
   background: rgba(18, 18, 18, 0.94) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
