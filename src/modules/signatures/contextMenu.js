@@ -53,7 +53,7 @@ function getPageDimensions(img, scale) {
     let width = 595.28;
     let height = 841.89;
     if (wrapper) {
-        const canvas = wrapper.querySelector('canvas');
+        const canvas = wrapper.querySelector('canvas:not(.highlight-canvas):not(.pencil-canvas)');
         if (canvas) {
             width = canvas.width / window.devicePixelRatio / scale;
             height = canvas.height / window.devicePixelRatio / scale;

@@ -1,7 +1,9 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { initHighlights } from './modules/highlights.js';
+import { initPencil } from './modules/pencil.js';
 import { initHistoryUI } from './modules/history_ui.js';
 import { initSignatures } from './modules/signatures.js';
+import { initSignatureAudit } from './modules/signatures/auditModal.js';
 import { initTypewriter } from './modules/typewriter.js';
 import { initPdfViewer } from './core/pdfViewer.js';
 import { setupAppChrome } from './ui/appChrome.js';
@@ -25,7 +27,9 @@ async function initApp() {
     await initPdfViewer('pdf-viewer');
     initTypewriter('pdf-viewer');
     initHighlights('pdf-viewer');
+    initPencil('pdf-viewer');
     initSignatures('pdf-viewer');
+    initSignatureAudit();
     initHistoryUI();
 
     const { getCurrentPdfPath } = setupDocumentLifecycle(appWindow);

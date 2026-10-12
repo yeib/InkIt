@@ -218,6 +218,10 @@ export async function loadDocument(pdfBytes) {
         ));
         if (requestId !== loadRequestId) return;
 
+        // Inspeccionar firmas digitales existentes del documento
+        import('../modules/signatures/auditModal.js').then(m => {
+            m.checkDocumentSignatures(pdfBytes, currentPdfPath);
+        }).catch(err => console.warn('Audit error:', err));
     } catch (error) {
         if (requestId !== loadRequestId) return;
         console.error("Error al cargar el PDF:", error);
@@ -272,6 +276,7 @@ export async function closeDocument() {
     
     // Reset internal state
     currentScale = 1.2;
+    import('../modules/signatures/auditModal.js').then(m => m.clearSignatureAudit()).catch(() => {});
     
     // Clear DOM
     container.innerHTML = `

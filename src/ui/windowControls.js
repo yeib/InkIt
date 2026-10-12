@@ -9,20 +9,36 @@ export function setupWindowControls(appWindow) {
     const maxBtn = document.getElementById('titlebar-maximize');
     const updateMaxIcon = async () => {
         if (!maxBtn) return;
-        const isMax = await appWindow.isMaximized();
-        if (isMax) {
-            maxBtn.innerHTML = '<svg viewBox="0 0 10 10"><path d="M 2,2 L 8,2 L 8,8 L 2,8 Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M 4,2 L 4,0 L 10,0 L 10,6 L 8,6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-        } else {
-            maxBtn.innerHTML = '<svg viewBox="0 0 10 10"><path d="M 0,0 0,10 10,10 10,0 Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+        try {
+            const isMax = await appWindow.isMaximized();
+            if (isMax) {
+                maxBtn.innerHTML = '<svg viewBox="0 0 10 10"><path d="M 1,3 L 7,3 L 7,9 L 1,9 Z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M 3,3 L 3,1 L 9,1 L 9,7 L 7,7" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+                document.body.classList.add('window-maximized');
+                document.body.classList.remove('window-compact');
+            } else {
+                maxBtn.innerHTML = '<svg viewBox="0 0 10 10"><path d="M 1,1 L 9,1 L 9,9 L 1,9 Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
+                document.body.classList.remove('window-maximized');
+                document.body.classList.add('window-compact');
+            }
+        } catch (e) {
+            console.warn('Error reading window maximized state:', e);
         }
     };
     
+    updateMaxIcon();
+    
     maxBtn?.addEventListener('click', async () => {
         await appWindow.toggleMaximize();
-        setTimeout(updateMaxIcon, 100);
+        updateMaxIcon();
+        setTimeout(updateMaxIcon, 50);
+        setTimeout(updateMaxIcon, 150);
+        setTimeout(updateMaxIcon, 300);
     });
     
-    appWindow.onResized(updateMaxIcon);
+    window.addEventListener('resize', updateMaxIcon);
+    try {
+        appWindow.onResized(updateMaxIcon);
+    } catch (_) {}
 
     const confirmExit = async () => {
         return await showConfirm(

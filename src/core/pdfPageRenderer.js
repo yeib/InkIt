@@ -1,4 +1,5 @@
 import { attachHighlightOverlay } from '../modules/highlights.js';
+import { attachPencilOverlay } from '../modules/pencil.js';
 import { renderImageAnnotationsForPage } from '../modules/signatures.js';
 import { renderAnnotationsForPage } from '../modules/typewriter.js';
 
@@ -91,7 +92,7 @@ export async function renderPageContent(wrapper, pageNum, getPdf, getScale) {
         wrapper.style.width = Math.floor(viewport.width) + "px";
         wrapper.style.height = Math.floor(viewport.height) + "px";
 
-        let canvas = wrapper.querySelector('canvas:not(.highlight-canvas)');
+        let canvas = wrapper.querySelector('canvas:not(.highlight-canvas):not(.pencil-canvas)');
         if (!canvas) {
             canvas = document.createElement('canvas');
             canvas.style.width = "100%";
@@ -125,6 +126,7 @@ export async function renderPageContent(wrapper, pageNum, getPdf, getScale) {
         renderAnnotationsForPage(wrapper, pageNum, scale);
         renderImageAnnotationsForPage(wrapper, pageNum, scale);
         attachHighlightOverlay(wrapper, pageNum, scale);
+        attachPencilOverlay(wrapper, pageNum, scale);
 
         wrapper.dataset.rendered = "true";
     } catch (err) {
@@ -141,8 +143,9 @@ export function unrenderPageContent(wrapper) {
         try { wrapper._renderTask.cancel(); } catch (e) {}
         wrapper._renderTask = null;
     }
-    wrapper.querySelector('canvas:not(.highlight-canvas)')?.remove();
+    wrapper.querySelector('canvas:not(.highlight-canvas):not(.pencil-canvas)')?.remove();
     wrapper.querySelector('.highlight-canvas')?.remove();
+    wrapper.querySelector('.pencil-canvas')?.remove();
     wrapper.querySelectorAll('.text-annotation, .img-annotation').forEach(element => element.remove());
     wrapper.dataset.rendered = "false";
 }

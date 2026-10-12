@@ -1,6 +1,6 @@
 [package]
 name = "inkit"
-version = "1.0.3"
+version = "1.0.4"
 description = "InkIt - Yeib Ecosystem"
 authors = ["Yeib"]
 repository = "https://github.com/yeib/InkIt"
@@ -35,3 +35,4 @@ time = { version = "0.3", features = ["local-offset"] }
 openssl = { version = "0.10", features = ["vendored"] }
 tauri-plugin-shell = "2.3.6"
 yeib_sys = { path = "../../crates/yeib_sys" }
+inkit_core = { path = "../../crates/inkit_core" }

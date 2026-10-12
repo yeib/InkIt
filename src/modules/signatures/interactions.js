@@ -43,8 +43,18 @@ export function renderImageAnnotation(anno, wrapper, scale) {
         }
     });
 
+    img.addEventListener('click', e => {
+        e.stopPropagation();
+    });
+
     img.addEventListener('mousedown', event => {
         if (event.button !== 0) return;
+
+        // Si la herramienta de selección (btn-pointer) no está activa, seleccionarla automáticamente
+        const pointerBtn = document.getElementById('btn-pointer');
+        if (pointerBtn && !pointerBtn.classList.contains('primary')) {
+            pointerBtn.click();
+        }
 
         const startX = event.clientX;
         const startY = event.clientY;

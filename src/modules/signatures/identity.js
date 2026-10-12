@@ -1,40 +1,28 @@
+/**
+ * identity.js
+ *
+ * Gestión del modal de identidades (crear sello / importar .pfx) y guardado
+ * de las identidades en LocalStorage (`inkit_esigns`).
+ *
+ * El renderizado de sellos vive en `stampRenderer.js` y la firma criptográfica
+ * en `signService.js`; ambos se re-exportan aquí para mantener la
+ * compatibilidad con `vault.js`, `footer.js` y `signatures.js`.
+ */
 import { t } from '../translations.js';
 import { renderVaults, getEsignLang, setEsignLang } from './vault.js';
-import { promptPassword, promptNewPassword } from './passwordModal.js';
-import { showAlert, showConfirm } from '../confirmModal.js';
+import { promptNewPassword } from './passwordModal.js';
+import { showAlert } from '../confirmModal.js';
+import { generateVisualStamp, generateFooterStamp } from './stampRenderer.js';
+import { signCurrentPdfWithPfx } from './signService.js';
 
-export const SEAL_TEXTS = {
-    es: {
-        signedBy: 'Firmado digitalmente por:',
-        date: 'Fecha:',
-        electronicSignedBy: 'Firmado electrónicamente por:',
-        cryptoValidation: 'Validación criptográfica PAdES / PKCS#7',
-        verified: 'VERIFIED',
-        verifiedIdentity: 'Identidad verificada mediante criptografía de clave pública'
-    },
-    en: {
-        signedBy: 'Digitally signed by:',
-        date: 'Date:',
-        electronicSignedBy: 'Digitally signed by:',
-        cryptoValidation: 'PAdES / PKCS#7 Cryptographic Validation',
-        verified: 'VERIFIED',
-        verifiedIdentity: 'Identity verified by public key cryptography'
-    }
-};
+export { SEAL_TEXTS, formatStampDate, generateVisualStamp, generateFooterStamp } from './stampRenderer.js';
+export { signAndExport } from './signService.js';
 
-export function formatStampDate(date = new Date(), lang = 'es') {
-    const pad = (n) => n.toString().padStart(2, '0');
-    const d = pad(date.getDate());
-    const m = pad(date.getMonth() + 1);
-    const y = date.getFullYear();
-    const hours = pad(date.getHours());
-    const minutes = pad(date.getMinutes());
-    const seconds = pad(date.getSeconds());
-    return lang === 'en'
-        ? `${m}/${d}/${y} ${hours}:${minutes}:${seconds}`
-        : `${d}/${m}/${y} ${hours}:${minutes}:${seconds}`;
-}
-
+/**
+ * Enlaza el modal de identidades, el selector de idioma e-Sign y el botón
+ * "Firmar con .pfx" de la toolbar.
+ * @returns {void}
+ */
 export function setupIdentity() {
     const btnNewIdentity = document.getElementById('btn-new-identity');
     const btnImportIdentity = document.getElementById('btn-import-identity');
@@ -55,9 +43,7 @@ export function setupIdentity() {
 
     const btnBrowsePfx = document.getElementById('btn-browse-pfx');
     const pfxChosenFilename = document.getElementById('pfx-chosen-filename');
-    const pfxImportName = document.getElementById('pfx-import-name');
-    const pfxImportDetail = document.getElementById('pfx-import-detail');
-    const pfxImportExtra = document.getElementById('pfx-import-extra');
+    const pfxImportPassword = document.getElementById('pfx-import-password');
 
     const btnCancelStamp = document.getElementById('btn-cancel-stamp');
     const btnGenerateStamp = document.getElementById('btn-generate-stamp');
@@ -84,6 +70,7 @@ export function setupIdentity() {
             if (stampModalHeading) stampModalHeading.textContent = t('modal.pfx.tab_import');
             if (stampModalDesc) stampModalDesc.textContent = t('modal.pfx.hint');
             if (btnGenerateStamp) btnGenerateStamp.textContent = t('modal.btn.import');
+            if (pfxImportPassword) pfxImportPassword.value = '';
         }
     }
 
@@ -111,6 +98,11 @@ export function setupIdentity() {
         });
     }
 
+    /**
+     * Abre el selector de archivos .pfx/.p12, guarda la ruta elegida y
+     * rellena el nombre sugerido en el formulario de importación.
+     * @returns {Promise<string|null>} Ruta elegida, o `null` si se canceló.
+     */
     async function pickPfxFile() {
         const { open } = await import('@tauri-apps/plugin-dialog');
         const selected = await open({
@@ -127,7 +119,7 @@ export function setupIdentity() {
             pfxChosenFilename.textContent = fileName;
             pfxChosenFilename.style.color = '#10b981';
         }
-        if (pfxImportName) pfxImportName.value = cleanName;
+        pfxImportPassword?.focus();
         return selected;
     }
 
@@ -140,7 +132,7 @@ export function setupIdentity() {
         if (!picked) return;
         setTab('import');
         if (stampModal) stampModal.style.display = 'flex';
-        pfxImportName?.focus();
+        pfxImportPassword?.focus();
     });
 
     const btnSignPfx = document.getElementById('btn-sign-pfx');
@@ -157,9 +149,7 @@ export function setupIdentity() {
             void onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal, esignVault });
         } else {
             void onImportPfxStamp({
-                pfxImportName,
-                pfxImportDetail,
-                pfxImportExtra,
+                pfxImportPassword,
                 selectedPfxPath,
                 stampModal,
                 esignVault
@@ -169,197 +159,11 @@ export function setupIdentity() {
 }
 
 /**
- * Flujo de "Firmar con .pfx existente" (botón dedicado en la toolbar, fuera
- * de la bóveda). Abre selector de .pfx, pide contraseña, firma el PDF
- * abierto y pide dónde guardar el resultado.
+ * Genera los sellos (es/en) de una identidad nueva, crea opcionalmente su
+ * certificado .pfx protegido con contraseña y guarda todo en LocalStorage.
+ * @param {object} els Elementos del DOM del modal.
+ * @returns {Promise<void>}
  */
-async function signCurrentPdfWithPfx() {
-    const { open } = await import('@tauri-apps/plugin-dialog');
-    const { invoke } = await import('@tauri-apps/api/core');
-    const { savePdf } = await import('../../core/pdfExport.js');
-
-    const pfxPath = await open({
-        multiple: false,
-        filters: [{ name: 'PKCS#12 Certificate', extensions: ['pfx', 'p12'] }]
-    });
-    if (!pfxPath) return;
-
-    const password = await promptPassword(t('modal.pfx.title'), t('modal.pfx.hint'));
-    if (password === null) return;
-
-    const stateModule = await import('../../modules/state.js');
-    const pdfViewer = await import('../../core/pdfViewer.js');
-
-    let pathToSign = pdfViewer?.getCurrentPdfPath?.() || pdfViewer?.currentPdfPath || window.currentPdfPath;
-    if (stateModule.isDirty) {
-        const wantsToSave = await showConfirm(
-            t('alert.title.unsaved'),
-            t('alert.unsaved_sign'),
-            t('alert.btn_continue'),
-            t('modal.btn.cancel')
-        );
-        if (!wantsToSave) return;
-        const savedPath = await savePdf(pathToSign);
-        if (!savedPath) return;
-        pathToSign = savedPath;
-    }
-
-    await signAndExport({ invoke, showAlert, pdfViewer, pfxPath, password, targetPdfPath: pathToSign });
-}
-
-/**
- * Firma el PDF actualmente abierto con el .pfx/contraseña dados, y pregunta
- * dónde guardar el PDF firmado resultante. Compartido entre el botón de la
- * toolbar (signCurrentPdfWithPfx) y el botón 🔐 de cada identidad en la
- * bóveda (vault.js).
- */
-export async function signAndExport({ invoke, showAlert: alertFn, pdfViewer, pfxPath, password, targetPdfPath }) {
-    const notifyAlert = alertFn || showAlert;
-    try {
-        const currentPath = targetPdfPath || pdfViewer?.getCurrentPdfPath?.() || pdfViewer?.currentPdfPath || window.currentPdfPath;
-        if (!currentPath) {
-            await notifyAlert('InkIt', t('alert.open_first_sign'), 'warning');
-            return;
-        }
-
-        const signedBytes = await invoke('sign_pdf', {
-            pdfPath: currentPath,
-            pfxPath: pfxPath,
-            pfxPassword: password
-        });
-
-        const { documentDir, join, basename } = await import('@tauri-apps/api/path');
-        const { mkdir } = await import('@tauri-apps/plugin-fs');
-
-        const docsPath = await documentDir();
-        const signedFolder = await join(docsPath, 'InkIt', 'Signed');
-        await mkdir(signedFolder, { recursive: true });
-
-        const originalName = await basename(currentPath);
-        const newName = originalName.replace('.pdf', `_signed_${Date.now()}.pdf`);
-        const targetPath = await join(signedFolder, newName);
-
-        if (targetPath) {
-            await invoke('save_file', { path: targetPath, contents: signedBytes });
-            await notifyAlert('InkIt', `${t('alert.signed_saved')}\n${targetPath}`, 'info');
-        }
-    } catch (err) {
-        console.error(err);
-        await notifyAlert('InkIt', t('alert.error_sign') + err, 'error');
-    }
-}
-
-export async function generateVisualStamp({ name, detail = '', extra = '' }, date = new Date(), lang = 'es') {
-    const texts = SEAL_TEXTS[lang] || SEAL_TEXTS.es;
-    const stampCanvas = document.createElement('canvas');
-    stampCanvas.width = 700;
-    stampCanvas.height = 200;
-    const sCtx = stampCanvas.getContext('2d');
-    sCtx.scale(2, 2);
-
-    sCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    sCtx.fillRect(0, 0, 350, 100);
-    sCtx.strokeStyle = '#003399';
-    sCtx.lineWidth = 2;
-    sCtx.strokeRect(1, 1, 348, 98);
-
-    const logo = await new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = '/InkIt_Logo.png';
-    });
-
-    if (logo) {
-        sCtx.drawImage(logo, 10, 12, 45, 45);
-        sCtx.textAlign = 'center';
-        sCtx.fillStyle = '#003399';
-        sCtx.font = 'italic 12px "Segoe Script", cursive, Arial';
-        sCtx.fillText('InkIt', 32, 72);
-        sCtx.font = 'bold 8.5px Arial';
-        sCtx.fillText(texts.verified, 32, 85);
-        sCtx.textAlign = 'left';
-    } else {
-        sCtx.fillStyle = '#003399';
-        sCtx.font = '36px Arial';
-        sCtx.fillText('🖋️', 15, 60);
-    }
-
-    sCtx.beginPath();
-    sCtx.moveTo(65, 10);
-    sCtx.lineTo(65, 90);
-    sCtx.stroke();
-
-    sCtx.fillStyle = '#000000';
-    sCtx.font = 'bold 15px Arial';
-    sCtx.fillText(texts.signedBy, 75, 25);
-    sCtx.font = 'bold 16px Arial';
-    sCtx.fillStyle = '#003399';
-    sCtx.fillText(name, 75, 45);
-
-    sCtx.fillStyle = '#333333';
-    sCtx.font = '11px Arial';
-    const dateStr = formatStampDate(date, lang);
-    sCtx.fillText(`${texts.date} ${dateStr}`, 75, 60);
-    if (detail) sCtx.fillText(detail, 75, 75);
-    if (extra) {
-        sCtx.fillText(extra, 75, 90);
-    } else {
-        sCtx.font = 'italic 9.5px Arial';
-        sCtx.fillStyle = '#64748b';
-        sCtx.fillText(texts.cryptoValidation, 75, 90);
-    }
-
-    return stampCanvas.toDataURL('image/png');
-}
-
-export async function generateFooterStamp({ name, detail = '', extra = '' }, date = new Date(), lang = 'es') {
-    const texts = SEAL_TEXTS[lang] || SEAL_TEXTS.es;
-    const footerCanvas = document.createElement('canvas');
-    footerCanvas.width = 1600;
-    footerCanvas.height = 120;
-    const fCtx = footerCanvas.getContext('2d');
-    fCtx.scale(2, 2);
-
-    fCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    fCtx.fillRect(0, 0, 800, 60);
-    fCtx.strokeStyle = '#003399';
-    fCtx.lineWidth = 2;
-    fCtx.beginPath();
-    fCtx.moveTo(0, 0);
-    fCtx.lineTo(800, 0);
-    fCtx.stroke();
-
-    fCtx.fillStyle = '#003399';
-    fCtx.font = 'bold 15px Arial';
-    fCtx.fillText(`${texts.electronicSignedBy} ${name} ${detail ? '- ' + detail : ''}`, 20, 25);
-    fCtx.fillStyle = '#333333';
-    fCtx.font = '11px Arial';
-    const dateStr = formatStampDate(date, lang);
-    const extraPart = extra ? ` | ${extra}` : '';
-    fCtx.fillText(`${texts.date} ${dateStr} | ${texts.verifiedIdentity}${extraPart}`, 20, 45);
-
-    const logo = await new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = '/InkIt_Logo.png';
-    });
-
-    if (logo) {
-        fCtx.drawImage(logo, 730, 5, 50, 50);
-    }
-    fCtx.fillStyle = '#003399';
-    fCtx.textAlign = 'right';
-    fCtx.font = 'italic 18px "Segoe Script", cursive, Arial';
-    fCtx.fillText('InkIt', 720, 28);
-    fCtx.font = 'bold 9px Arial';
-    fCtx.fillText(texts.verified, 720, 43);
-    fCtx.textAlign = 'left';
-
-    return footerCanvas.toDataURL('image/png');
-}
-
 async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal, esignVault }) {
     const name = inputName.value.trim();
     if (!name) return;
@@ -370,7 +174,6 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
 
     try {
         const now = new Date();
-        const { getEsignLang } = await import('./vault.js');
         const activeLang = getEsignLang();
 
         const [dataUrlEs, footerDataUrlEs, dataUrlEn, footerDataUrlEn] = await Promise.all([
@@ -380,7 +183,7 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
             generateFooterStamp({ name, detail, extra }, now, 'en')
         ]);
 
-        let saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
+        const saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
 
         const password = await promptNewPassword(
             t('modal.pfx_new.title'),
@@ -432,10 +235,19 @@ async function onGenerateStamp({ inputName, inputDetail, inputExtra, stampModal,
     }
 }
 
+/**
+ * Valida la contraseña del .pfx con Rust, extrae automáticamente su
+ * identidad (CN y organización/email), genera los sellos y guarda la
+ * identidad en LocalStorage.
+ * @param {object} params
+ * @param {HTMLInputElement} params.pfxImportPassword Campo de contraseña.
+ * @param {string|null} params.selectedPfxPath Ruta del archivo .pfx elegido.
+ * @param {HTMLElement} params.stampModal Modal de sellos.
+ * @param {HTMLElement} params.esignVault Contenedor de la bóveda e-Sign.
+ * @returns {Promise<void>}
+ */
 async function onImportPfxStamp({
-    pfxImportName,
-    pfxImportDetail,
-    pfxImportExtra,
+    pfxImportPassword,
     selectedPfxPath,
     stampModal,
     esignVault
@@ -444,19 +256,45 @@ async function onImportPfxStamp({
         await showAlert('InkIt', t('modal.pfx.no_file'), 'warning');
         return;
     }
-    const name = pfxImportName.value.trim();
-    if (!name) {
-        await showAlert('InkIt', t('modal.stamp.name'), 'warning');
+    const password = pfxImportPassword ? pfxImportPassword.value : '';
+    if (!password) {
+        await showAlert('InkIt', t('modal.pw.empty'), 'warning');
+        pfxImportPassword?.focus();
         return;
     }
-    const detail = pfxImportDetail.value.trim();
-    const extra = pfxImportExtra ? pfxImportExtra.value.trim() : '';
+
+    const { invoke } = await import('@tauri-apps/api/core');
+
+    let certInfo;
+    try {
+        certInfo = await invoke('inspect_pfx', {
+            pfxPath: selectedPfxPath,
+            password
+        });
+    } catch (err) {
+        console.warn('Error inspeccionando PFX:', err);
+        const errStr = String(err || '');
+        let msg = t('alert.pfx_wrong_pw');
+        if (errStr.includes('INVALID_PFX')) {
+            msg = t('alert.pfx_invalid');
+        } else if (errStr.includes('MISSING_CERT')) {
+            msg = t('alert.pfx_missing_cert');
+        } else if (errStr.includes('WRONG_PASSWORD')) {
+            msg = t('alert.pfx_wrong_pw');
+        }
+        await showAlert('InkIt', msg, 'error');
+        pfxImportPassword?.select();
+        pfxImportPassword?.focus();
+        return;
+    }
 
     stampModal.style.display = 'none';
 
     try {
+        const name = certInfo.name || 'Certificado';
+        const detail = certInfo.detail || '';
+        const extra = '';
         const now = new Date();
-        const { getEsignLang } = await import('./vault.js');
         const activeLang = getEsignLang();
 
         const [dataUrlEs, footerDataUrlEs, dataUrlEn, footerDataUrlEn] = await Promise.all([
@@ -466,7 +304,7 @@ async function onImportPfxStamp({
             generateFooterStamp({ name, detail, extra }, now, 'en')
         ]);
 
-        let saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
+        const saved = JSON.parse(localStorage.getItem('inkit_esigns') || '[]');
         saved.push({
             name,
             detail,
@@ -489,6 +327,3 @@ async function onImportPfxStamp({
         await showAlert('InkIt', t('alert.error_pfx_import') + err, 'error');
     }
 }
-
-
-

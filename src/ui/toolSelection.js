@@ -5,6 +5,7 @@ export function setupToolSelection() {
         { id: 'btn-pointer', activate: activatePointer },
         { id: 'btn-typewriter', activate: activateTypewriter },
         { id: 'btn-highlight', activate: activateHighlights },
+        { id: 'btn-pencil', activate: activatePencil },
         { id: 'btn-stamp', activate: activateStamps },
         { id: 'btn-esign', activate: activateEsign }
     ];
@@ -41,16 +42,22 @@ function disableHighlights() {
     window.disableHighlights?.();
 }
 
+function disablePencil() {
+    window.disablePencil?.();
+}
+
 function activatePointer() {
     disableTypewriter();
     disableSignatures();
     disableHighlights();
+    disablePencil();
     updateAnnotationsMode('pointer');
 }
 
 function activateTypewriter() {
     disableSignatures();
     disableHighlights();
+    disablePencil();
     window.enableTypewriter?.();
     updateAnnotationsMode('typewriter');
 }
@@ -58,13 +65,23 @@ function activateTypewriter() {
 function activateHighlights() {
     disableTypewriter();
     disableSignatures();
+    disablePencil();
     window.enableHighlights?.();
+    updateAnnotationsMode('pointer');
+}
+
+function activatePencil() {
+    disableTypewriter();
+    disableSignatures();
+    disableHighlights();
+    window.enablePencil?.();
     updateAnnotationsMode('pointer');
 }
 
 function activateStamps() {
     disableTypewriter();
     disableHighlights();
+    disablePencil();
     window.enableStampVault?.();
     updateAnnotationsMode('pointer');
 }
@@ -72,6 +89,7 @@ function activateStamps() {
 function activateEsign() {
     disableTypewriter();
     disableHighlights();
+    disablePencil();
     window.enableEsignVault?.();
     updateAnnotationsMode('pointer');
 }

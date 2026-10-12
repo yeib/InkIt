@@ -39,11 +39,11 @@
     <link rel="stylesheet" href="/src/css/typewriter.css" />
     <link rel="stylesheet" href="/src/css/signatures.css" />
   </head>
-  <body>
+  <body class="window-compact">
     <div id="app">
       <!-- Toolbar (Header) -->
       <header class="toolbar glass-panel" data-tauri-drag-region>
-        <div class="toolbar-left" data-tauri-drag-region style="flex-grow: 1; display: flex; align-items: center; height: 100%; gap: 12px;">
+        <div class="toolbar-left" data-tauri-drag-region>
           <!-- Menú Hamburguesa -->
           <div class="menu-dropdown-container">
             <button class="btn-icon" id="btn-main-menu" title="Main Menu" data-i18n-title="title.main_menu">
@@ -63,59 +63,83 @@
             </div>
           </div>
           <span class="app-title" data-tauri-drag-region style="display: flex; align-items: center;">
-            <img src="/InkIt_Logo.png" style="width: 14px; height: 14px; margin-right: 6px; border-radius: 2px;" alt="Logo" /> InkIt 
-            <a href="https://yeib.cl" target="_blank" data-i18n="app.by" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic;">by Yeib</a>
-              <button id="btn-open-workspace" class="btn-icon" style="margin-left: 12px; width: 26px; height: 26px; border-radius: 6px;" title="Open InkIt Folder" data-i18n-title="btn.workspace">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </button>
-            <button id="btn-quick-save" class="btn-glass" style="display: none; margin-left: 12px; background: rgba(46, 204, 113, 0.2); border: 1px solid rgba(46, 204, 113, 0.5); color: #2ecc71; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-              💾 <span data-i18n="btn.save_changes">Save changes</span>
+            <img src="/InkIt_Logo.png" style="width: 16px; height: 16px; margin-right: 7px; border-radius: 3px; filter: drop-shadow(0 2px 4px rgba(0, 229, 255, 0.35));" alt="Logo" />
+            <span class="app-title-text">InkIt</span>
+            <a href="https://yeib.cl" target="_blank" data-i18n="app.by" class="app-by" style="font-size: 11px; color: var(--accent-cyan); text-decoration: none; margin-left: 8px; font-weight: normal; font-style: italic; opacity: 0.85;">by Yeib</a>
+            <button id="btn-open-workspace" class="btn-icon" style="margin-left: 10px; width: 26px; height: 26px; border-radius: 6px;" data-tooltip="Open InkIt Folder" data-i18n-tooltip="btn.workspace">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
             </button>
           </span>
         </div>
-        <div class="toolbar-center" data-tauri-drag-region style="display: flex; gap: 4px; align-items: center; margin-right: 120px;">
+        <div class="toolbar-center" data-tauri-drag-region>
           <div class="history-control">
-          <button class="btn-icon" id="btn-undo" title="Undo (Ctrl+Z)" data-i18n-title="title.undo" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M3 10h10a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5H9M3 10l5 5M3 10l5-5"/></svg>
-          </button>
-          <button class="btn-icon history-dropdown-toggle" id="btn-undo-history" aria-label="Undo history" data-i18n-title="history.undo" aria-expanded="false" disabled>
-            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 4 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-          </button>
-          <div class="glass-panel history-dropdown" id="undo-history-menu" role="menu" style="display: none;"></div>
+            <button class="btn-icon" id="btn-undo" data-tooltip="Undo (Ctrl+Z)" data-i18n-tooltip="title.undo" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M3 10h10a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5H9M3 10l5 5M3 10l5-5"/></svg>
+            </button>
+            <button class="btn-icon history-dropdown-toggle" id="btn-undo-history" aria-label="Undo history" data-tooltip="Undo history" data-i18n-tooltip="history.undo" aria-expanded="false" disabled>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 4 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <div class="glass-panel history-dropdown" id="undo-history-menu" role="menu" style="display: none;"></div>
           </div>
           <div class="history-control">
-          <button class="btn-icon" id="btn-redo" title="Redo (Ctrl+Y)" data-i18n-title="title.redo" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M21 10H11a5 5 0 0 0-5 5v2a5 5 0 0 0 5 5h4M21 10l-5 5M21 10l-5-5"/></svg>
-          </button>
-          <button class="btn-icon history-dropdown-toggle" id="btn-redo-history" aria-label="Redo history" data-i18n-title="history.redo" aria-expanded="false" disabled>
-            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 4 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-          </button>
-          <div class="glass-panel history-dropdown" id="redo-history-menu" role="menu" style="display: none;"></div>
+            <button class="btn-icon" id="btn-redo" data-tooltip="Redo (Ctrl+Y)" data-i18n-tooltip="title.redo" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M21 10H11a5 5 0 0 0-5 5v2a5 5 0 0 0 5 5h4M21 10l-5 5M21 10l-5-5"/></svg>
+            </button>
+            <button class="btn-icon history-dropdown-toggle" id="btn-redo-history" aria-label="Redo history" data-tooltip="Redo history" data-i18n-tooltip="history.redo" aria-expanded="false" disabled>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 4 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <div class="glass-panel history-dropdown" id="redo-history-menu" role="menu" style="display: none;"></div>
           </div>
-          <div class="divider" style="margin: 0 8px;"></div>
-          <button class="btn-icon" id="btn-dark-mode" data-i18n-title="settings.dark_mode_toggle" aria-pressed="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width: 18px; height: 18px;">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M12 3a9 9 0 0 1 0 18z"></path>
-            </svg>
+          <div class="divider" style="margin: 0 6px;"></div>
+          <button class="btn-glass primary" id="btn-pointer" data-tooltip="Select" data-i18n-tooltip="btn.pointer">
+            <span class="tool-icon">🖱️</span>
+            <span class="tool-text" data-i18n="btn.pointer">Select</span>
           </button>
-          <button class="btn-glass primary" id="btn-pointer" data-i18n="btn.pointer">🖱️ Select</button>
-          <button class="btn-glass" id="btn-typewriter" data-i18n="btn.typewriter">🔤 Text</button>
-          <button class="btn-glass" id="btn-highlight" data-i18n="btn.highlight">🖍️ Highlight</button>
-          <button class="btn-glass" id="btn-stamp" data-i18n="btn.stamp">🪪 Stamp</button>
-          <button class="btn-glass" id="btn-esign" data-i18n="btn.esign">✒️ e-Sign</button>
+          <button class="btn-glass" id="btn-typewriter" data-tooltip="Text" data-i18n-tooltip="btn.typewriter">
+            <span class="tool-icon">🔤</span>
+            <span class="tool-text" data-i18n="btn.typewriter">Text</span>
+          </button>
+          <button class="btn-glass" id="btn-highlight" data-tooltip="Highlight" data-i18n-tooltip="btn.highlight">
+            <span class="tool-icon">🖍️</span>
+            <span class="tool-text" data-i18n="btn.highlight">Highlight</span>
+          </button>
+          <button class="btn-glass" id="btn-pencil" data-tooltip="Pencil" data-i18n-tooltip="btn.pencil">
+            <span class="tool-icon">✏️</span>
+            <span class="tool-text" data-i18n="btn.pencil">Pencil</span>
+          </button>
+          <button class="btn-glass" id="btn-stamp" data-tooltip="Stamp" data-i18n-tooltip="btn.stamp">
+            <span class="tool-icon">🪪</span>
+            <span class="tool-text" data-i18n="btn.stamp">Stamp</span>
+          </button>
+          <button class="btn-glass" id="btn-esign" data-tooltip="e-Sign" data-i18n-tooltip="btn.esign">
+            <span class="tool-icon">✒️</span>
+            <span class="tool-text" data-i18n="btn.esign">e-Sign</span>
+          </button>
         </div>
-        <div class="toolbar-right window-controls">
-          <div class="window-btn" id="titlebar-minimize">
-            <svg viewBox="0 0 10 10"><path d="M 0,5 10,5" stroke="currentColor" stroke-width="1.5"/></svg>
-          </div>
-          <div class="window-btn" id="titlebar-maximize">
-            <svg viewBox="0 0 10 10"><path d="M 0,0 0,10 10,10 10,0 Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-          </div>
-          <div class="window-btn close-btn" id="titlebar-close">
-            <svg viewBox="0 0 10 10"><path d="M 0,0 10,10 M 10,0 0,10" stroke="currentColor" stroke-width="1.5"/></svg>
+        <div class="toolbar-right" data-tauri-drag-region>
+          <button id="btn-sig-status" class="btn-glass" style="display: none;" data-tooltip="Auditoría de Firmas Digitales">
+            <span class="tool-icon" id="sig-status-icon">🛡️</span>
+            <span class="tool-text" id="sig-status-text">Firmas</span>
+          </button>
+          <button class="btn-icon" id="btn-dark-mode" data-tooltip="Modo Oscuro (Invertir PDF)" data-i18n-tooltip="settings.dark_mode_toggle" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </button>
+          <button id="btn-quick-save" class="btn-glass pulse-success" style="display: none; background: rgba(46, 204, 113, 0.2); border: 1px solid rgba(46, 204, 113, 0.5); color: #2ecc71; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+            <span class="tool-icon">💾</span> <span class="tool-text" data-i18n="btn.save_changes">Save changes</span>
+          </button>
+          <div class="divider" style="margin: 0 4px;"></div>
+          <div class="window-controls">
+            <div class="window-btn" id="titlebar-minimize">
+              <svg viewBox="0 0 10 10"><path d="M 0,5 10,5" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <div class="window-btn" id="titlebar-maximize">
+              <svg viewBox="0 0 10 10"><path d="M 1,1 L 9,1 L 9,9 L 1,9 Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+            <div class="window-btn close-btn" id="titlebar-close">
+              <svg viewBox="0 0 10 10"><path d="M 0,0 10,10 M 10,0 0,10" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
           </div>
         </div>
       </header>
@@ -138,11 +162,13 @@
           <button class="btn-glass" id="tw-bg-color" data-value="transparent" data-i18n="tw.bg.transparent">Transparent BG</button>
         </div>
         <div class="divider"></div>
-        <div class="tool-group">
-          <span class="group-label" data-i18n="tw.stamps">Stamps:</span>
-          <button class="btn-glass stamp-btn" data-stamp="✓">✓</button>
-          <button class="btn-glass stamp-btn" data-stamp="✗">✗</button>
-          <button class="btn-glass stamp-btn" id="btn-stamp-date" data-i18n="stamp.date">Date</button>
+        <div class="tool-group" style="position: relative;">
+          <span class="group-label" data-i18n="tw.symbols">Symbols:</span>
+          <button class="btn-glass stamp-btn" data-stamp="✓" title="✓">✓</button>
+          <button class="btn-glass stamp-btn" data-stamp="✗" title="✗">✗</button>
+          <button class="btn-glass stamp-btn" id="btn-stamp-emoji" title="Emojis">😊</button>
+          <button class="btn-glass stamp-btn" id="btn-stamp-date" data-i18n="stamp.date" title="Date">Date</button>
+          <div id="emoji-picker-dropdown" class="glass-panel" style="display: none; position: absolute; top: calc(100% + 8px); left: 70px; z-index: 1000; padding: 6px; border-radius: 8px; grid-template-columns: repeat(4, 1fr); gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); backdrop-filter: blur(12px); background: rgba(18, 22, 31, 0.95); border: 1px solid rgba(255,255,255,0.15);"></div>
         </div>
       </div>
 
@@ -157,6 +183,23 @@
           <div class="divider" style="margin: 0 8px;"></div>
           <button class="color-btn" data-color="rgba(0, 0, 0, 1.0)" style="background: rgba(0, 0, 0, 1.0);" title="Solid Black"></button>
           <button class="color-btn" data-color="rgba(255, 255, 255, 1.0)" style="background: rgba(255, 255, 255, 1.0); border: 1px solid #666;" title="Solid White"></button>
+        </div>
+      </div>
+
+      <!-- Sub-Toolbar: Pencil Controls (Oculto por defecto) -->
+      <div class="typewriter-toolbar glass-panel" id="pencil-toolbar" style="display: none;">
+        <div class="tool-group">
+          <label data-i18n="pencil.width">Width:</label>
+          <input type="number" id="pencil-size" value="3" min="1" max="24" class="glass-input" style="width: 50px;" />
+        </div>
+        <div class="divider"></div>
+        <div class="tool-group" id="pencil-colors">
+          <label data-i18n="tw.color">Color:</label>
+          <button class="color-btn active" data-color="#000000" style="background: #000000;"></button>
+          <button class="color-btn" data-color="#003399" style="background: #003399;"></button>
+          <button class="color-btn" data-color="#cc0000" style="background: #cc0000;"></button>
+          <button class="color-btn" data-color="#008000" style="background: #008000;"></button>
+          <button class="color-btn" data-color="#6b21a8" style="background: #6b21a8;"></button>
         </div>
       </div>
 
@@ -232,9 +275,7 @@
             <button type="button" class="btn-glass primary" id="btn-browse-pfx" style="flex-shrink: 0;" data-i18n="modal.pfx.browse">Browse...</button>
             <span id="pfx-chosen-filename" style="font-size: 0.85rem; color: #10b981; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-i18n="modal.pfx.no_file">No file selected</span>
           </div>
-          <input type="text" id="pfx-import-name" autocomplete="off" class="glass-input" data-i18n="modal.stamp.name" placeholder="Full name" style="width: 100%; box-sizing: border-box;" />
-          <input type="text" id="pfx-import-detail" autocomplete="off" class="glass-input" data-i18n="modal.stamp.detail" placeholder="E-mail (Optional)" style="width: 100%; box-sizing: border-box;" />
-          <input type="text" id="pfx-import-extra" autocomplete="off" class="glass-input" data-i18n="modal.stamp.extra" placeholder="Role, Company or ID (Optional)" style="width: 100%; box-sizing: border-box;" />
+          <input type="password" id="pfx-import-password" autocomplete="off" class="glass-input" data-i18n="modal.pfx.password" placeholder="Certificate Password" style="width: 100%; box-sizing: border-box;" />
         </div>
 
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 8px; width: 100%; margin-top: 4px;">
@@ -341,6 +382,47 @@
         </div>
         <div class="modal-actions" style="margin-top: 16px;">
           <button class="btn-glass primary" id="btn-about-close" data-i18n="modal.btn.close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Auditoría de Firmas Digitales -->
+    <div class="modal-overlay" id="sig-audit-modal" style="display: none; z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); background: rgba(0, 0, 0, 0.65);">
+      <div class="glass-panel modal-content" style="width: 480px; max-width: 92vw; max-height: 85vh; padding: 0; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <!-- Encabezado -->
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.02);">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+            🛡️
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #ffffff;" data-i18n="audit.title">Auditoría de Firmas Digitales</h3>
+            <p style="margin: 0; font-size: 0.73rem; color: rgba(255, 255, 255, 0.55);" data-i18n="audit.subtitle">Verificación criptográfica y de integridad del documento</p>
+          </div>
+        </div>
+
+        <!-- Contenido -->
+        <div style="padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
+          <!-- Banner de Estado Global -->
+          <div id="sig-audit-banner" style="padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.1); display: flex; align-items: flex-start; gap: 10px;">
+            <span id="sig-audit-banner-icon" style="font-size: 18px;">🛡️</span>
+            <div>
+              <div id="sig-audit-banner-title" style="font-size: 0.82rem; font-weight: 700; color: #34D399;">Documento Intacto y Criptográficamente Válido</div>
+              <div id="sig-audit-banner-desc" style="font-size: 0.74rem; color: rgba(255, 255, 255, 0.65); margin-top: 2px;">Todas las firmas son válidas y el archivo no ha sido modificado.</div>
+            </div>
+          </div>
+
+          <!-- Contador de firmas encontradas -->
+          <div id="sig-audit-count" style="font-size: 0.78rem; font-weight: 700; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; letter-spacing: 0.05em;">
+            Firmas Encontradas:
+          </div>
+
+          <!-- Lista de firmas -->
+          <div id="sig-audit-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <!-- Pie de modal con botón Cerrar estilizado -->
+        <div style="padding: 12px 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; background: rgba(255, 255, 255, 0.02);">
+          <button type="button" class="btn-glass primary" id="btn-sig-audit-close" style="padding: 6px 20px; font-size: 0.82rem; font-weight: 600; color: #ffffff; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; cursor: pointer;" data-i18n="modal.btn.close">Close</button>
         </div>
       </div>
     </div>

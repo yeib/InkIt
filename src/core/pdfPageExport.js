@@ -1,5 +1,5 @@
 export async function renderPageAsPng(activeWrapper, pageNum, scale) {
-    const originalCanvas = activeWrapper.querySelector('canvas');
+    const originalCanvas = activeWrapper.querySelector('canvas:not(.highlight-canvas):not(.pencil-canvas)');
     if (!originalCanvas) throw new Error("No se encontró el lienzo del PDF");
 
     const outputCanvas = document.createElement('canvas');

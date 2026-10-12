@@ -1,23 +1,8 @@
 import { state, annotations } from './state.js';
 import { addImageAnnotationToPage } from '../signatures.js';
 import { commitAction } from '../state.js';
-import { setActiveAnnotation, clearActiveAnnotation, updateAnnotationsMode, setupExistingAnnotation, renderAnnotation } from './interactions.js';
-
-function createStampDataUrl(symbol, color) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 120;
-    canvas.height = 120;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = 'bold 80px sans-serif';
-    ctx.fillStyle = color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(symbol, 60, 65);
-    
-    return canvas.toDataURL('image/png');
-}
+import { setActiveAnnotation, clearActiveAnnotation, updateAnnotationsMode, setupExistingAnnotation } from './interactions.js';
+import { setupSymbols } from './symbols.js';
 
 export function createNewEditableBox(wrapper, pageNum, baseX, baseY, baseFontSize, color, currentScale) {
     const div = document.createElement('div');
@@ -103,6 +88,8 @@ export function initTypewriter(containerId) {
         }
     });
     
+    const symbols = setupSymbols(toolbar, state, annotations, addImageAnnotationToPage);
+
     window.enableTypewriter = () => {
         state.isTypewriterMode = true; 
         state.currentColor = '#000000'; 
@@ -110,7 +97,7 @@ export function initTypewriter(containerId) {
         if(colorBtns[0]) colorBtns[0].classList.add('active');
         
         if(toolbar) toolbar.style.display = 'flex';
-        stampBtns.forEach(b => b.classList.remove('active'));
+        symbols.resetStampBtns();
         if(state.pdfContainer) state.pdfContainer.style.cursor = 'text';
     };
 
@@ -122,6 +109,7 @@ export function initTypewriter(containerId) {
         updateAnnotationsMode('pointer');
         state.pendingStampType = null;
         state.pendingStampSymbol = null;
+        symbols.resetStampBtns();
     };
 
     sizeInput?.addEventListener('input', (e) => {
@@ -153,66 +141,16 @@ export function initTypewriter(containerId) {
         });
     });
 
-    stampBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            if (btn.classList.contains('active')) {
-                btn.classList.remove('active');
-                state.pendingStampType = null;
-                state.pendingStampSymbol = null;
-                if(state.pdfContainer) state.pdfContainer.style.cursor = 'text';
-                return;
-            }
-            stampBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            const symbol = btn.dataset.stamp;
-            if (symbol) {
-                state.pendingStampType = 'symbol';
-                state.pendingStampSymbol = symbol;
-                if(state.pdfContainer) state.pdfContainer.style.cursor = 'crosshair';
-            } else if (btn.id === 'btn-stamp-date' || e.target.id === 'btn-stamp-date') {
-                state.pendingStampType = 'date';
-                state.pendingStampSymbol = new Date().toLocaleDateString();
-                if(state.pdfContainer) state.pdfContainer.style.cursor = 'crosshair';
-            }
-        });
-    });
-
     state.pdfContainer?.addEventListener('click', (e) => {
         const pageWrapper = e.target.closest('.pdf-page-wrapper');
         
         if (state.pendingStampType && pageWrapper) {
-            const rect = pageWrapper.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const clickY = e.clientY - rect.top;
-            
             const pageNum = parseInt(pageWrapper.dataset.pageNum);
             const currentScale = parseFloat(pageWrapper.dataset.scale || 1.0);
-            const baseX = clickX / currentScale;
-            const baseY = clickY / currentScale;
-
-            if (state.pendingStampType === 'symbol') {
-                const stampPng = createStampDataUrl(state.pendingStampSymbol, state.currentColor);
-                addImageAnnotationToPage(stampPng, pageNum, baseX, baseY, 40);
-            } else if (state.pendingStampType === 'date') {
-                const newAnno = {
-                    id: Date.now().toString(),
-                    pageNum: pageNum,
-                    x: baseX,
-                    y: baseY,
-                    text: state.pendingStampSymbol,
-                    fontSize: state.currentFontSize,
-                    color: state.currentColor,
-                    bgColor: "transparent"
-                };
-                annotations.push(newAnno);
-                renderAnnotation(newAnno, pageWrapper, currentScale);
-                commitAction();
-            }
-            
-            // state.pendingStampType = null;
-            state.pendingStampSymbol = null;
-            state.pdfContainer.style.cursor = 'text'; 
+            const rect = pageWrapper.getBoundingClientRect();
+            const baseX = (e.clientX - rect.left) / currentScale;
+            const baseY = (e.clientY - rect.top) / currentScale;
+            symbols.placeSymbolOrDate(pageWrapper, pageNum, baseX, baseY, currentScale);
             return;
         }
 
@@ -222,7 +160,7 @@ export function initTypewriter(containerId) {
 
         if (!state.isTypewriterMode || !pageWrapper) return;
         
-        if (e.target.classList.contains('text-annotation')) return;
+        if (e.target.classList.contains('text-annotation') || e.target.classList.contains('img-annotation')) return;
 
         const rect = pageWrapper.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
