@@ -135,16 +135,16 @@ pub struct PfxIdentityInfo {
 
 /// Valida la contraseña e inspecciona el contenido de un archivo `.pfx/.p12`,
 /// extrayendo automáticamente el nombre común (CN) y organización/email.
-pub fn inspect_pfx_bytes(pfx_bytes: &[u8], password: &str) -> Result<PfxIdentityInfo, Box<dyn Error>> {
+pub fn inspect_pfx_bytes(
+    pfx_bytes: &[u8],
+    password: &str,
+) -> Result<PfxIdentityInfo, Box<dyn Error>> {
     let _legacy_provider = openssl::provider::Provider::try_load(None, "legacy", true).ok();
     let _default_provider = openssl::provider::Provider::try_load(None, "default", true).ok();
 
-    let pkcs12 = Pkcs12::from_der(pfx_bytes)
-        .map_err(|_| "INVALID_PFX")?;
-    let identity = pkcs12.parse2(password)
-        .map_err(|_| "WRONG_PASSWORD")?;
-    let cert = identity.cert
-        .ok_or("MISSING_CERT")?;
+    let pkcs12 = Pkcs12::from_der(pfx_bytes).map_err(|_| "INVALID_PFX")?;
+    let identity = pkcs12.parse2(password).map_err(|_| "WRONG_PASSWORD")?;
+    let cert = identity.cert.ok_or("MISSING_CERT")?;
 
     let mut name = String::new();
     let mut detail = String::new();

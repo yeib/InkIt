@@ -15,7 +15,9 @@
 //!      hexadecimal exactamente dentro del placeholder de `/Contents`
 //!      (que nunca cambia de tamaño, así que ningún otro offset se mueve).
 
-use lopdf::{dictionary, Dictionary, Document, IncrementalDocument, Object, ObjectId, StringFormat};
+use lopdf::{
+    dictionary, Dictionary, Document, IncrementalDocument, Object, ObjectId, StringFormat,
+};
 use openssl::pkcs12::Pkcs12;
 use openssl::pkcs7::{Pkcs7, Pkcs7Flags};
 use openssl::provider::Provider;
