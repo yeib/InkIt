@@ -172,21 +172,59 @@ header.toolbar {
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
   margin-left: auto;
   z-index: 2;
 }
 
+/* Toolbar Right: Always mini 36px circular buttons */
+.toolbar-right .btn-glass .tool-text {
+  display: none !important;
+}
+
+.toolbar-right .btn-glass {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  transition: all 0.18s ease !important;
+}
+
+.toolbar-right .btn-glass .tool-icon {
+  font-size: 1.05rem !important;
+  margin: 0 !important;
+}
+
 #btn-sig-status {
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  align-items: center;
-  gap: 6px;
+  border-radius: 50% !important;
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: all 0.18s ease !important;
+}
+
+#btn-sig-status:hover {
+  transform: scale(1.06);
+}
+
+#btn-quick-save {
+  background: rgba(46, 204, 113, 0.2) !important;
+  border: 1.5px solid rgba(46, 204, 113, 0.6) !important;
+  color: #2ecc71 !important;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.25);
+}
+
+#btn-quick-save:hover {
+  background: rgba(46, 204, 113, 0.35) !important;
+  border-color: #2ecc71 !important;
+  box-shadow: 0 0 14px rgba(46, 204, 113, 0.55), inset 0 0 6px rgba(255, 255, 255, 0.2);
+  transform: scale(1.06);
 }
 
 #btn-dark-mode {
@@ -269,16 +307,12 @@ header.toolbar {
    ======================================================== */
 
 body.window-compact .toolbar-center .btn-glass .tool-text,
-body.window-compact .toolbar-right .btn-glass .tool-text,
-body:not(.window-maximized) .toolbar-center .btn-glass .tool-text,
-body:not(.window-maximized) .toolbar-right .btn-glass .tool-text {
+body:not(.window-maximized) .toolbar-center .btn-glass .tool-text {
   display: none !important;
 }
 
 body.window-compact .toolbar-center .btn-glass,
-body.window-compact .toolbar-right .btn-glass,
-body:not(.window-maximized) .toolbar-center .btn-glass,
-body:not(.window-maximized) .toolbar-right .btn-glass {
+body:not(.window-maximized) .toolbar-center .btn-glass {
   padding: 0 !important;
   width: 36px !important;
   height: 36px !important;
@@ -292,27 +326,21 @@ body:not(.window-maximized) .toolbar-right .btn-glass {
 }
 
 body.window-compact .toolbar-center .btn-glass .tool-icon,
-body.window-compact .toolbar-right .btn-glass .tool-icon,
-body:not(.window-maximized) .toolbar-center .btn-glass .tool-icon,
-body:not(.window-maximized) .toolbar-right .btn-glass .tool-icon {
+body:not(.window-maximized) .toolbar-center .btn-glass .tool-icon {
   font-size: 1.05rem !important;
   margin: 0 !important;
 }
 
 body.window-compact .toolbar-center,
-body.window-compact .toolbar-right,
-body:not(.window-maximized) .toolbar-center,
-body:not(.window-maximized) .toolbar-right {
+body:not(.window-maximized) .toolbar-center {
   gap: 4px !important;
 }
 
 @media (max-width: 1400px) {
-  .toolbar-center .btn-glass .tool-text,
-  .toolbar-right .btn-glass .tool-text {
+  .toolbar-center .btn-glass .tool-text {
     display: none !important;
   }
-  .toolbar-center .btn-glass,
-  .toolbar-right .btn-glass {
+  .toolbar-center .btn-glass {
     padding: 0 !important;
     width: 36px !important;
     height: 36px !important;
@@ -324,13 +352,11 @@ body:not(.window-maximized) .toolbar-right {
     gap: 0 !important;
     overflow: hidden !important;
   }
-  .toolbar-center .btn-glass .tool-icon,
-  .toolbar-right .btn-glass .tool-icon {
+  .toolbar-center .btn-glass .tool-icon {
     font-size: 1.05rem !important;
     margin: 0 !important;
   }
-  .toolbar-center,
-  .toolbar-right {
+  .toolbar-center {
     gap: 4px !important;
   }
 }

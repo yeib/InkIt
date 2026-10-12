@@ -53,24 +53,25 @@ export async function checkDocumentSignatures(pdfBytes, pdfPath = null) {
         lastAuditReport = report;
 
         if (report && report.hasSignatures && report.signatures.length > 0) {
-            const hasModified = report.signatures.some(s => s.isTamperedOrAppended);
+            const hasModified = report.signatures.some(s => s.isModifiedAfterSigning || !s.isValid || s.integrityStatus !== 'valid');
             const count = report.signatures.length;
             const t = window.t || ((k) => k);
 
             btnStatus.style.display = 'inline-flex';
-            if (statusIcon) statusIcon.textContent = '🛡️';
 
             if (hasModified) {
                 btnStatus.style.color = '#FBBF24';
-                btnStatus.style.borderColor = 'rgba(251, 191, 36, 0.4)';
-                btnStatus.style.background = 'rgba(251, 191, 36, 0.12)';
+                btnStatus.style.borderColor = 'rgba(251, 191, 36, 0.5)';
+                btnStatus.style.background = 'rgba(251, 191, 36, 0.15)';
+                if (statusIcon) statusIcon.textContent = '⚠️';
                 if (statusText) statusText.textContent = `${t('btn.signatures') || 'Firmas'} (${count}) ⚠️`;
                 btnStatus.setAttribute('data-tooltip', `${t('btn.signatures') || 'Firmas'} (${count}): ${t('audit.tampered') || 'Documento modificado post-firma'}`);
                 btnStatus.removeAttribute('title');
             } else {
                 btnStatus.style.color = '#34D399';
-                btnStatus.style.borderColor = 'rgba(52, 211, 153, 0.4)';
-                btnStatus.style.background = 'rgba(16, 185, 129, 0.12)';
+                btnStatus.style.borderColor = 'rgba(52, 211, 153, 0.5)';
+                btnStatus.style.background = 'rgba(16, 185, 129, 0.15)';
+                if (statusIcon) statusIcon.textContent = '🛡️';
                 if (statusText) statusText.textContent = `${t('btn.signatures') || 'Firmas'} (${count})`;
                 btnStatus.setAttribute('data-tooltip', `${t('btn.signatures') || 'Firmas'} (${count}): ${t('audit.valid') || 'Documento intacto y firmas válidas'}`);
                 btnStatus.removeAttribute('title');
@@ -101,7 +102,7 @@ function renderAuditModal(report) {
     const countEl = document.getElementById('sig-audit-count');
 
     const t = window.t || ((k) => k);
-    const hasModified = report.signatures.some(s => s.isTamperedOrAppended);
+    const hasModified = report.signatures.some(s => s.isModifiedAfterSigning || !s.isValid || s.integrityStatus !== 'valid');
 
     if (bannerEl) {
         if (hasModified) {
@@ -172,7 +173,8 @@ function renderAuditModal(report) {
             badge.style.padding = '2px 8px';
             badge.style.borderRadius = '4px';
             badge.style.fontWeight = '600';
-            if (sig.isTamperedOrAppended) {
+            const isSigTampered = sig.isModifiedAfterSigning || !sig.isValid || sig.integrityStatus !== 'valid';
+            if (isSigTampered) {
                 badge.style.background = 'rgba(234, 179, 8, 0.18)';
                 badge.style.color = '#FBBF24';
                 badge.style.border = '1px solid rgba(234, 179, 8, 0.35)';
@@ -195,11 +197,17 @@ function renderAuditModal(report) {
             grid.style.fontSize = '0.74rem';
             grid.style.color = 'rgba(255, 255, 255, 0.7)';
 
-            if (sig.contactInfo) {
-                grid.innerHTML += `<div>✉️ <span>${escapeHtml(sig.contactInfo)}</span></div>`;
+            if (sig.organization) {
+                grid.innerHTML += `<div>🏢 <span>${escapeHtml(sig.organization)}</span></div>`;
             }
-            if (sig.subFilter) {
-                grid.innerHTML += `<div>⚙️ <span>${escapeHtml(sig.subFilter)}</span></div>`;
+            if (sig.email || sig.contactInfo) {
+                grid.innerHTML += `<div>✉️ <span>${escapeHtml(sig.email || sig.contactInfo)}</span></div>`;
+            }
+            if (sig.algorithm || sig.subFilter) {
+                grid.innerHTML += `<div>⚙️ <span>${escapeHtml(sig.algorithm || sig.subFilter)}</span></div>`;
+            }
+            if (sig.location) {
+                grid.innerHTML += `<div>📍 <span>${escapeHtml(sig.location)}</span></div>`;
             }
             if (sig.signingTime) {
                 grid.innerHTML += `<div>📅 <span>${escapeHtml(sig.signingTime)}</span></div>`;

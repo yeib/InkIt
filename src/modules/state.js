@@ -56,7 +56,7 @@ export function setDirty(val) {
     isDirty = val; 
     const btnSave = document.getElementById('btn-quick-save');
     if (btnSave) {
-        btnSave.style.display = isDirty ? 'inline-block' : 'none';
+        btnSave.style.display = isDirty ? 'inline-flex' : 'none';
     }
 }
 

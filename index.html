@@ -126,8 +126,9 @@
           <button class="btn-icon" id="btn-dark-mode" data-tooltip="Modo Oscuro (Invertir PDF)" data-i18n-tooltip="settings.dark_mode_toggle" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           </button>
-          <button id="btn-quick-save" class="btn-glass pulse-success" style="display: none; background: rgba(46, 204, 113, 0.2); border: 1px solid rgba(46, 204, 113, 0.5); color: #2ecc71; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-            <span class="tool-icon">💾</span> <span class="tool-text" data-i18n="btn.save_changes">Save changes</span>
+          <button id="btn-quick-save" class="btn-glass pulse-success" style="display: none;" data-tooltip="Save changes (Ctrl+S)" data-i18n-tooltip="btn.save_changes">
+            <span class="tool-icon">💾</span>
+            <span class="tool-text" data-i18n="btn.save_changes">Save changes</span>
           </button>
           <div class="divider" style="margin: 0 4px;"></div>
           <div class="window-controls">
@@ -432,6 +433,7 @@
       <button class="dropdown-item" id="sig-ctx-s" data-i18n="ctx.size.s">Small Size (S)</button>
       <button class="dropdown-item" id="sig-ctx-m" data-i18n="ctx.size.m">Medium Size (M)</button>
       <button class="dropdown-item" id="sig-ctx-l" data-i18n="ctx.size.l">Large Size (L)</button>
+      <button class="dropdown-item" id="sig-ctx-banner" data-i18n="ctx.banner" style="display: none; color: #00e5ff;">📑 Footer Banner Mode</button>
       <div id="sig-ctx-opacity-container" style="display: flex; flex-direction: column; padding: 6px 8px; gap: 6px;">
         <span data-i18n="ctx.opacity" style="color: #f39c12; font-size: 13px; text-align: left;">&#127183; Opacity (Watermark)</span>
         <div style="display: flex; gap: 4px; justify-content: space-between;">
